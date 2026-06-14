@@ -117,7 +117,7 @@ RailGuard/
 ## 🚀 How to Run
 
 ### 1. Clone repository
-```bash
+```
 git clone https://github.com/ShaikMishaTabassum/RailGuard-AI.git
 cd RailGuard-AI
 ### 2. Install dependencies
