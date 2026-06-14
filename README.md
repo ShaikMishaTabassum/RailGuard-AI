@@ -83,7 +83,7 @@ It acts as a **centralized railway intelligence control system**.
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 RailGuard/
 │
 ├── assets/                 # Images, icons, media
@@ -114,7 +114,7 @@ RailGuard/
 
 ---
 
-## 🚀 How to Run
+##  How to Run
 
 ### 1. Clone repository
 ```
@@ -127,7 +127,7 @@ npm run dev
 ### 4. Run backend
 python backend_main.py
 
--------------
+----------
 
 ### System Architecture
 Frontend (UI Dashboard + Map + Simulation)
