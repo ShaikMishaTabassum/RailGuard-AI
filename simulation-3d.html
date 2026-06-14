@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RailGuard AI — 3D Digital Twin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+  body { margin:0; overflow:hidden; background:#081120; font-family: 'Outfit', sans-serif; }
+  canvas { display:block; }
+  
+  .glass-panel {
+    background: rgba(14, 29, 54, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 195, 255, 0.15);
+    box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  }
+
+  /* Warning Flash pulsing */
+  @keyframes warning-pulse {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.35; }
+  }
+  .pulsing-alert {
+    animation: warning-pulse 0.5s infinite alternate;
+  }
+</style>
+
+</head>
+<body>
+
+<!-- AI Analysis Overlay -->
+<div id="ai-panel" class="glass-panel" style="position: absolute; top: 20px; left: 20px; border-radius: 8px; padding: 20px; width: 280px; color: #eaf4ff; z-index: 10;">
+  <h3 style="margin: 0 0 12px; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; color: #00c3ff; border-bottom: 1px solid rgba(0, 195, 255, 0.2); padding-bottom: 6px; letter-spacing: 0.1em;">AI SAFETY ANALYSIS</h3>
+  <div style="margin-bottom: 8px; font-size: 0.75rem;"><span style="color: #8bacc8;">Fault Type:</span> <strong id="ai-fault">Nominal State</strong></div>
+  <div style="margin-bottom: 8px; font-size: 0.75rem;"><span style="color: #8bacc8;">Risk Score:</span> <strong id="ai-risk" style="color: #00e5a0;">2%</strong></div>
+  <div style="margin-bottom: 8px; font-size: 0.75rem;"><span style="color: #8bacc8;">Failure ETA:</span> <strong id="ai-eta">N/A</strong></div>
+  <div style="font-size: 0.75rem;"><span style="color: #8bacc8;">Action:</span> <strong id="ai-action" style="color: #00e5a0;">Nominal baselines stable</strong></div>
+</div>
+
+<!-- Simulation Control Panel -->
+<div id="controls-panel" class="glass-panel" style="position: absolute; bottom: 20px; left: 20px; border-radius: 8px; padding: 15px; width: 280px; color: #eaf4ff; z-index: 10;">
+  <h4 style="margin: 0 0 10px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; color: #ff6b35; letter-spacing: 0.05em;">INTERACTIVE CONSOLE</h4>
+  <button id="btn-inject" onclick="injectFault()" style="background: #ff6b35; border: none; color: #fff; padding: 10px 12px; font-size: 0.75rem; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 8px; transition: 0.2s;">INJECT BROKEN RAIL FAULT</button>
+  <button onclick="resetScene()" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 12px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; width: 100%; transition: 0.2s;">RESET SIMULATION</button>
+  <a href="/dashboard.html" style="display: block; text-align: center; font-size: 0.65rem; color: #00c3ff; margin-top: 10px; text-decoration: none; font-family: 'JetBrains Mono', monospace;">← BACK TO DASHBOARD</a>
+</div>
+
+<!-- Red Flash Warning Overlay -->
+<div id="emergency-flash" style="position: absolute; inset: 0; background: rgba(255,59,92,0.18); pointer-events: none; opacity: 0; z-index: 5; transition: opacity 0.15s ease;"></div>
+
+<!-- Emergency Halt Notification Banner -->
+<div id="halt-banner" style="position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background: rgba(196,77,61,0.95); border: 2px solid #ff3b5c; border-radius: 8px; padding: 15px 30px; width: 450px; text-align: center; color: #fff; z-index: 20; transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1);">
+  <div style="font-weight: 800; font-size: 1.15rem; letter-spacing: 0.05em; margin-bottom: 4px;">⚠ EMERGENCY OVERRIDE ENGAGED ⚠</div>
+  <div style="font-size: 0.85rem; font-family: 'JetBrains Mono', monospace;" id="halt-desc">Sector Signal set to RED. Train halting...</div>
+</div>
+
+<canvas id="c"></canvas>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// Setup elements
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.8;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xaed6ff); // bright sky blue
+scene.fog = new THREE.FogExp2(0xaed6ff, 0.012);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 500);
+camera.position.set(22, 16, 32);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.5, 0);
+controls.enableDamping = true;
+
+/* ─────────────────────────────
+   LIGHTING (BRIGHT REALISTIC SUN)
+   ───────────────────────────── */
+const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+sun.position.set(40, 70, 30);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far = 150;
+const d = 50;
+sun.shadow.camera.left = -d;
+sun.shadow.camera.right = d;
+sun.shadow.camera.top = d;
+sun.shadow.camera.bottom = -d;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+// Hemisphere sky fill
+const hemi = new THREE.HemisphereLight(0xddeeff, 0x556688, 1.4);
+scene.add(hemi);
+
+// Secondary soft fill
+const fill = new THREE.PointLight(0xfff5d6, 1.0, 80);
+fill.position.set(-20, 20, 20);
+scene.add(fill);
+
+/* ─────────────────────────────
+   GROUND & BALLAST BED
+   ───────────────────────────── */
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(500, 500),
+  new THREE.MeshStandardMaterial({ color: 0x6e7f60, roughness: 1.0 }) // grass color
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Ballast Bed (raised platform for track)
+const ballast = new THREE.Mesh(
+  new THREE.BoxGeometry(10, 0.6, 150),
+  new THREE.MeshStandardMaterial({ color: 0x4f4f4f, roughness: 0.9 })
+);
+ballast.position.set(0, 0.3, 0);
+ballast.receiveShadow = true;
+ballast.castShadow = true;
+scene.add(ballast);
+
+/* ─────────────────────────────
+   SEGMENTED RAIL TRACK HEATMAP
+   ───────────────────────────── */
+const rails = [];
+const railSegments = [];
+
+// Split rails into Z-chunks of 10 units each to enable localized heatmap shifts
+for (let zVal = -70; zVal <= 70; zVal += 10) {
+  const segmentMatLeft = new THREE.MeshStandardMaterial({
+    color: 0xc0c0c0, metalness: 0.9, roughness: 0.2
+  });
+  const segmentMatRight = new THREE.MeshStandardMaterial({
+    color: 0xc0c0c0, metalness: 0.9, roughness: 0.2
+  });
+
+  const rL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.22, 10), segmentMatLeft);
+  rL.position.set(-1.5, 0.71, zVal);
+  rL.receiveShadow = true;
+  rL.castShadow = true;
+  scene.add(rL);
+
+  const rR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.22, 10), segmentMatRight);
+  rR.position.set(1.5, 0.71, zVal);
+  rR.receiveShadow = true;
+  rR.castShadow = true;
+  scene.add(rR);
+
+  railSegments.push({
+    z: zVal,
+    left: rL,
+    right: rR,
+    matL: segmentMatLeft,
+    matR: segmentMatRight
+  });
+}
+
+// Concrete sleepers (ties) - visible
+const sleepers = [];
+for (let i = 0; i < 70; i++) {
+  const z = -70 + i * 2.0;
+  const sleeper = new THREE.Mesh(
+    new THREE.BoxGeometry(3.6, 0.16, 0.5),
+    new THREE.MeshStandardMaterial({ color: 0x8a847e, roughness: 0.9 }) // concrete sleepers
+  );
+  sleeper.position.set(0, 0.48, z);
+  sleeper.receiveShadow = true;
+  sleeper.castShadow = true;
+  scene.add(sleeper);
+}
+
+/* ─────────────────────────────
+   SENSOR NODES & FAULT ZONE GLOW
+   ───────────────────────────── */
+const sensorNodes = [];
+const nodeZs = [-40, -20, 0, 20, 40];
+
+nodeZs.forEach((z, idx) => {
+  const group = new THREE.Group();
+  group.position.set(-2.2, 0.65, z);
+
+  // Metal case
+  const box = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.4, 0.4),
+    new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 })
+  );
+  box.castShadow = true;
+  group.add(box);
+
+  // Status LED
+  const led = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x00ff88 })
+  );
+  led.position.y = 0.25;
+  group.add(led);
+
+  scene.add(group);
+  sensorNodes.push({ group, led, z, idx });
+});
+
+// Fault Zone glow
+const faultGlow = new THREE.Mesh(
+  new THREE.CircleGeometry(5, 32),
+  new THREE.MeshBasicMaterial({ color: 0xff3b3c, transparent: true, opacity: 0 })
+);
+faultGlow.rotation.x = -Math.PI / 2;
+faultGlow.position.set(0, 0.61, 0); // centered at fault zone
+scene.add(faultGlow);
+
+/* ─────────────────────────────
+   UPGRADED WAP-7 TRAIN MODEL
+   ───────────────────────────── */
+const train = new THREE.Group();
+
+// Train Coach Body
+const coach = new THREE.Mesh(
+  new THREE.BoxGeometry(3.2, 2.0, 14),
+  new THREE.MeshStandardMaterial({ color: 0x0a2342, metalness: 0.6, roughness: 0.2 }) // WAP-7 Blue
+);
+coach.position.y = 1.5;
+coach.castShadow = true;
+coach.receiveShadow = true;
+train.add(coach);
+
+// Roof details (Metal grey panel)
+const roof = new THREE.Mesh(
+  new THREE.BoxGeometry(2.8, 0.3, 13),
+  new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.8, roughness: 0.3 })
+);
+roof.position.y = 2.6;
+coach.castShadow = true;
+train.add(roof);
+
+// Windshield glass (Front & Back)
+const windshieldF = new THREE.Mesh(
+  new THREE.BoxGeometry(2.6, 0.6, 0.1),
+  new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.9 })
+);
+windshieldF.position.set(0, 2.0, 7.01);
+train.add(windshieldF);
+
+// Yellow chevron details
+const chevron = new THREE.Mesh(
+  new THREE.BoxGeometry(3.2, 0.4, 0.1),
+  new THREE.MeshStandardMaterial({ color: 0xff6b35 })
+);
+chevron.position.set(0, 0.8, 7.02);
+train.add(chevron);
+
+// Wheels (cylinders)
+const wheelMat = new THREE.MeshStandardMaterial({ color: 0x181818, metalness: 0.9, roughness: 0.4 });
+const wheelGeom = new THREE.CylinderGeometry(0.5, 0.5, 0.35, 16);
+wheelGeom.rotateZ(Math.PI / 2);
+
+const wheelPositionsZ = [-5, -3, 3, 5];
+wheelPositionsZ.forEach(wz => {
+  const wL = new THREE.Mesh(wheelGeom, wheelMat);
+  wL.position.set(-1.6, 0.5, wz);
+  wL.castShadow = true;
+  train.add(wL);
+
+  const wR = new THREE.Mesh(wheelGeom, wheelMat);
+  wR.position.set(1.6, 0.5, wz);
+  wR.castShadow = true;
+  train.add(wR);
+});
+
+// Headlight source
+const headlights = new THREE.Group();
+const leftH = new THREE.Mesh(new THREE.SphereGeometry(0.12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+leftH.position.set(-0.8, 1.0, 7.05);
+const rightH = leftH.clone();
+rightH.position.x = 0.8;
+headlights.add(leftH);
+headlights.add(rightH);
+
+const lightBeam = new THREE.SpotLight(0xffffff, 5, 45, Math.PI / 6, 0.5, 1);
+lightBeam.position.set(0, 1.0, 7.1);
+lightBeam.target.position.set(0, 0, 120);
+lightBeam.castShadow = true;
+headlights.add(lightBeam);
+headlights.add(lightBeam.target);
+
+train.add(headlights);
+train.position.set(0, 0, 70); // start at the back
+scene.add(train);
+
+/* ─────────────────────────────
+   SIMULATION LOGIC & FAULT PROGRESSION
+   ───────────────────────────── */
+let simActive = false;
+let simTick = 0;
+let faultProgress = 0; // 0: clear, 1: Stage 1, 2: Stage 2, 3: Stage 3, 4: Stage 4
+let trainSpeed = 0.6; // normal units per frame
+const faultZ = 0; // Fault zone at center Z=0 (corresponds to sensor node index 2)
+
+// DOM overlay element references
+const aiFaultText = document.getElementById('ai-fault');
+const aiRiskText = document.getElementById('ai-risk');
+const aiEtaText = document.getElementById('ai-eta');
+const aiActionText = document.getElementById('ai-action');
+const emergencyFlash = document.getElementById('emergency-flash');
+const haltBanner = document.getElementById('halt-banner');
+const haltDesc = document.getElementById('halt-desc');
+
+window.injectFault = function() {
+  if (simActive) return;
+  simActive = true;
+  simTick = 0;
+  faultProgress = 1;
+  document.getElementById('btn-inject').disabled = true;
+  document.getElementById('btn-inject').style.background = '#333';
+  document.getElementById('btn-inject').textContent = "SIMULATING FAULT INTERVENTION...";
+};
+
+window.resetScene = function() {
+  simActive = false;
+  simTick = 0;
+  faultProgress = 0;
+  trainSpeed = 0.6;
+  train.position.set(0, 0, 70);
+  
+  // Reset LED status
+  sensorNodes.forEach(node => {
+    node.led.material.color.setHex(0x00ff88);
+    node.led.material.emissive.setHex(0x00ff88);
+  });
+  
+  // Reset Heatmap rails
+  railSegments.forEach(seg => {
+    seg.matL.color.setHex(0xc0c0c0);
+    seg.matR.color.setHex(0xc0c0c0);
+  });
+
+  // Reset overlays
+  aiFaultText.textContent = "Nominal State";
+  aiRiskText.textContent = "2%";
+  aiRiskText.style.color = "#00e5a0";
+  aiEtaText.textContent = "N/A";
+  aiActionText.textContent = "Nominal baselines stable";
+  aiActionText.style.color = "#00e5a0";
+  
+  emergencyFlash.style.opacity = 0;
+  emergencyFlash.className = "";
+  haltBanner.style.top = "-100px";
+  faultGlow.material.opacity = 0;
+
+  // Reset camera target
+  controls.target.set(0, 1.5, 0);
+
+  document.getElementById('btn-inject').disabled = false;
+  document.getElementById('btn-inject').style.background = '#ff6b35';
+  document.getElementById('btn-inject').textContent = "INJECT BROKEN RAIL FAULT";
+};
+
+/* ─────────────────────────────
+   ANIMATION & RENDER LOOP
+   ───────────────────────────── */
+let clock = 0;
+
+function tick() {
+  requestAnimationFrame(tick);
+  controls.update();
+
+  clock += 0.05;
+
+  // 1. Train Movement
+  if (train.position.z > -70) {
+    train.position.z -= trainSpeed;
+  } else {
+    train.position.z = 70; // wrap around in idle
+  }
+
+  // 2. Pulse LEDs
+  sensorNodes.forEach(node => {
+    const defaultIntensity = 1.0 + Math.sin(clock * 5) * 0.4;
+    node.led.material.emissiveIntensity = defaultIntensity;
+  });
+
+  // 3. Fault Progression Stages
+  if (simActive) {
+    simTick++;
+
+    // Stage 1: Yellow Pulse (Tick 10 - 40)
+    if (simTick >= 10 && simTick < 50) {
+      faultProgress = 1;
+      
+      // Node 2 (Z=0) flashes yellow
+      sensorNodes[2].led.material.color.setHex(0xffb800);
+      sensorNodes[2].led.material.emissive.setHex(0xffb800);
+      
+      aiFaultText.textContent = "Minor joint fatigue (Stage 1)";
+      aiRiskText.textContent = "31%";
+      aiRiskText.style.color = "var(--amber)";
+      aiEtaText.textContent = "12.0s";
+      aiActionText.textContent = "Monitor / Speed advisory armed";
+      aiActionText.style.color = "var(--amber)";
+      
+      // Camera zooms to fault Z=0
+      controls.target.lerp(new THREE.Vector3(0, 0.7, 0), 0.05);
+      camera.position.lerp(new THREE.Vector3(8, 4, 10), 0.04);
+    }
+
+    // Stage 2: Orange warning / Heatmap (Tick 50 - 90)
+    if (simTick >= 50 && simTick < 100) {
+      faultProgress = 2;
+      
+      // Node 2 LED becomes orange
+      sensorNodes[2].led.material.color.setHex(0xff6b35);
+      sensorNodes[2].led.material.emissive.setHex(0xff6b35);
+
+      // Rails around Z=0 turn orange/terracotta
+      railSegments.forEach(seg => {
+        if (Math.abs(seg.z - faultZ) <= 15) {
+          seg.matL.color.setHex(0xc96a3d);
+          seg.matR.color.setHex(0xc96a3d);
+        }
+      });
+
+      aiFaultText.textContent = "Fracture spreading (Stage 2)";
+      aiRiskText.textContent = "68%";
+      aiRiskText.style.color = "var(--orange)";
+      aiEtaText.textContent = "6.5s";
+      aiActionText.textContent = "Speed override to 40km/h";
+      aiActionText.style.color = "var(--orange)";
+      
+      // Slow down train slightly
+      trainSpeed = 0.35;
+      
+      // Camera tracks close side view
+      controls.target.lerp(new THREE.Vector3(0, 1.2, train.position.z), 0.05);
+      camera.position.lerp(new THREE.Vector3(8, 3, train.position.z + 12), 0.04);
+    }
+
+    // Stage 3: Red emergency (Tick 100 - 130)
+    if (simTick >= 100 && simTick < 130) {
+      faultProgress = 3;
+      
+      // Node 2 LED flashing RED
+      sensorNodes[2].led.material.color.setHex(0xff3b5c);
+      sensorNodes[2].led.material.emissive.setHex(0xff3b5c);
+      sensorNodes[2].led.material.emissiveIntensity = 2.0 + Math.sin(clock * 15) * 1.0;
+
+      // Rails around Z=0 turn deep warning red
+      railSegments.forEach(seg => {
+        if (Math.abs(seg.z - faultZ) <= 10) {
+          seg.matL.color.setHex(0xff3b5c);
+          seg.matR.color.setHex(0xff3b5c);
+        }
+      });
+
+      // Turn on red flash and drop banner
+      emergencyFlash.style.opacity = 1;
+      emergencyFlash.className = "pulsing-alert";
+      haltBanner.style.top = "20px";
+      faultGlow.material.opacity = 0.4 + Math.sin(clock*10)*0.2;
+
+      aiFaultText.textContent = "COMPLETE JOINT SHEAR (Stage 3)";
+      aiRiskText.textContent = "98%";
+      aiRiskText.style.color = "var(--red)";
+      aiEtaText.textContent = "4.2s";
+      aiActionText.textContent = "AUTONOMOUS EMERGENCY HALT";
+      aiActionText.style.color = "var(--red)";
+      
+      // Rapid deceleration kinematics
+      trainSpeed = Math.max(0, trainSpeed - 0.015);
+      
+      // Camera focuses directly on critical fault
+      controls.target.lerp(new THREE.Vector3(0, 0.7, 0), 0.06);
+      camera.position.lerp(new THREE.Vector3(-6, 2, 4), 0.05);
+    }
+
+    // Stage 4: Halted safely (Tick 130+)
+    if (simTick >= 130) {
+      faultProgress = 4;
+      trainSpeed = 0; // stop train
+      
+      emergencyFlash.style.opacity = 0;
+      emergencyFlash.className = "";
+      faultGlow.material.opacity = 0.2;
+
+      haltDesc.textContent = "Train halted safely at Km 142.35. Avoided collision.";
+      haltDesc.style.color = "#00ff88";
+
+      aiFaultText.textContent = "Shear fracture blocked";
+      aiRiskText.textContent = "0%";
+      aiRiskText.style.color = "#00e5a0";
+      aiEtaText.textContent = "RESCUED";
+      aiActionText.textContent = "EMERGENCY INTERVENTION COMPLETED";
+      aiActionText.style.color = "#00e5a0";
+
+      // Camera smoothly pans out to show train halted safely before the red segment
+      controls.target.lerp(new THREE.Vector3(0, 1.2, train.position.z), 0.04);
+      camera.position.lerp(new THREE.Vector3(15, 6, train.position.z + 20), 0.03);
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+tick();
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>

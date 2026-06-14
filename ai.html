@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RailGuard AI | AI Operations Copilot</title>
+  <meta name="description" content="RailGuard AI Operations Copilot - Chat with the railway safety diagnostic neural models." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .ai-page-body {
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    .ai-chat-dashboard {
+      margin-top: 80px;
+      flex: 1;
+      max-width: 1000px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 30px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+    .chat-card-full {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .chat-header-pane {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-history-pane {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: rgba(8, 17, 32, 0.15);
+    }
+    .chat-bubble-custom {
+      max-width: 75%;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      font-family: var(--mono);
+      animation: bubble-fade 0.35s var(--ease) both;
+    }
+    @keyframes bubble-fade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .chat-bubble-custom.bot {
+      background: var(--bg3);
+      border: 1px solid var(--border-dim);
+      align-self: flex-start;
+      color: var(--text);
+    }
+    .chat-bubble-custom.user {
+      background: var(--orange-dim);
+      border: 1px solid rgba(255, 107, 53, 0.2);
+      align-self: flex-end;
+      color: var(--orange);
+    }
+    .chat-suggestions-pane {
+      padding: 12px 24px;
+      border-top: 1px solid var(--border-dim);
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      background: var(--bg2);
+    }
+    .chat-suggestions-pane::-webkit-scrollbar { display: none; }
+    .sug-button {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      font-family: var(--font);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 50px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+    }
+    .sug-button:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+      background: var(--orange-dim);
+    }
+    .chat-form-pane {
+      display: flex;
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--bg2);
+      gap: 16px;
+    }
+    .btn-send-chat {
+      background: var(--orange);
+      color: #fff;
+      font-weight: 700;
+      padding: 0 28px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: var(--t-fast);
+      box-shadow: 0 4px 15px var(--orange-glow);
+    }
+    .btn-send-chat:hover {
+      background: #e05625;
+      box-shadow: 0 6px 20px var(--orange-glow);
+    }
+    .status-text-copilot {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-3);
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body class="ai-page-body">
+
+  <div class="ambient-glow"></div>
+
+  <!-- ============ HEADER ============ -->
+  <header class="main-header" id="main-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <span class="logo-accent">RAIL</span>GUARD<span class="logo-dot">.AI</span>
+      </a>
+      <nav class="nav-links" id="nav-links">
+        <a href="/" class="nav-link"><span class="nav-num">01/</span> LANDING</a>
+        <a href="/dashboard.html" class="nav-link"><span class="nav-num">02/</span> COMMAND CENTER</a>
+        <a href="/dashboard.html?tab=twin" class="nav-link"><span class="nav-num">03/</span> DIGITAL TWIN</a>
+        <a href="/ai.html" class="nav-link active nav-highlight"><span class="nav-num">04/</span> AI COPILOT</a>
+        <a href="/india-map.html" class="nav-link"><span class="nav-num">05/</span> INDIA MAP</a>
+      </nav>
+      <div class="system-status">
+        <span class="status-indicator" id="global-status-dot"></span>
+        <span class="status-text" id="global-status-text">COGNITIVE NOMINAL</span>
+      </div>
+      <!-- Theme Switcher Toggle -->
+      <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme" style="background: none; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 50px; font-family: var(--mono); font-size: 0.68rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--t-fast);">
+        <span id="theme-toggle-icon">☀</span> <span id="theme-toggle-text">LIGHT</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ CHAT GRID ============ -->
+  <div class="ai-chat-dashboard">
+    <div style="margin-bottom: 15px;">
+      <h2 style="font-size: 1.25rem; font-weight: 800; text-transform: uppercase;">AI Safety Copilot</h2>
+      <p style="font-size: 0.78rem; color: var(--text-2); margin-top: 4px;">Forensic dialogue and telemetry query console powered by RailGuard Neural Core.</p>
+    </div>
+
+    <div class="chat-card-full">
+      <!-- Chat Header -->
+      <div class="chat-header-pane">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block;"></span>
+          <span style="font-size: 0.8rem; font-weight: 700; font-family: var(--mono);">RAILGUARD_NEURAL_v2.0</span>
+        </div>
+        <span class="status-text-copilot">SECURE ENCRYPTED CHANNEL</span>
+      </div>
+
+      <!-- Chat History -->
+      <div class="chat-history-pane" id="chat-history">
+        <div class="chat-bubble-custom bot">
+          System Initialized. I am the RailGuard Safety Analyst Copilot. I hold full indexing of all track segments, weather strain calculations, and active interlocking signals in South Central Railway. Ask me about corridor anomalies or intervention logs.
+        </div>
+      </div>
+
+      <!-- Floating quick suggestions -->
+      <div class="chat-suggestions-pane">
+        <button class="sug-button" onclick="submitQuery('Why was Train 12621 stopped?')">Why was Train 12621 stopped?</button>
+        <button class="sug-button" onclick="submitQuery('What is the current safety risk in Secunderabad Division?')">What is the safety risk in Secunderabad?</button>
+        <button class="sug-button" onclick="submitQuery('Explain how the edge TinyML node classifies track stress')">How does Edge TinyML classify stress?</button>
+      </div>
+
+      <!-- Chat input form -->
+      <form class="chat-form-pane" id="chat-form" onsubmit="handleChatSubmit(event)">
+        <input type="text" id="chat-input" class="form-control" placeholder="Query track status or diagnostic history..." autocomplete="off" style="flex: 1;" />
+        <button type="submit" class="btn-send-chat">SEND</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Theme Switcher implementation
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeToggleIcon = document.getElementById('theme-toggle-icon');
+    const themeToggleText = document.getElementById('theme-toggle-text');
+
+    const savedTheme = localStorage.getItem('railguard-theme') || 'dark';
+    document.documentElement.className = `theme-${savedTheme}`;
+    updateThemeUI(savedTheme);
+
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.classList.contains('theme-light') ? 'light' : 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.className = `theme-${newTheme}`;
+        localStorage.setItem('railguard-theme', newTheme);
+        updateThemeUI(newTheme);
+      });
+    }
+
+    function updateThemeUI(theme) {
+      if (themeToggleIcon && themeToggleText) {
+        if (theme === 'light') {
+          themeToggleIcon.textContent = '🌙';
+          themeToggleText.textContent = 'DARK';
+        } else {
+          themeToggleIcon.textContent = '☀';
+          themeToggleText.textContent = 'LIGHT';
+        }
+      }
+    }
+
+    // Chatbot functionality
+    const chatHistory = document.getElementById('chat-history');
+    const chatInput = document.getElementById('chat-input');
+
+    function appendMessage(role, text) {
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble-custom ${role}`;
+      bubble.textContent = text;
+      chatHistory.appendChild(bubble);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    function submitQuery(query) {
+      appendMessage('user', query);
+      simulateBotResponse(query);
+    }
+
+    function handleChatSubmit(e) {
+      e.preventDefault();
+      const text = chatInput.value.trim();
+      if (!text) return;
+      appendMessage('user', text);
+      chatInput.value = '';
+      simulateBotResponse(text);
+    }
+
+    function simulateBotResponse(query) {
+      setTimeout(() => {
+        const reply = getAIResponse(query);
+        appendMessage('bot', reply);
+      }, 750);
+    }
+
+    function getAIResponse(query) {
+      const lower = query.toLowerCase();
+
+      if (lower.includes('train 12621') || lower.includes('12621')) {
+        return "Track node KZP-03 detected a fractured rail with a 98% derailment probability. Emergency halt protocol was activated.";
+      }
+      if (lower.includes('secunderabad')) {
+        return "Secunderabad Sector SC-01 telemetry checks are nominal. Steel temperature is 34.2°C and vertical vibration stands at 1.02G (Baseline: 1.0G). CASUALTY_RISK is calculated at 2% (Nominal).";
+      }
+      if (lower.includes('tinyml') || lower.includes('classify') || lower.includes('stress')) {
+        return "The edge TinyML system uses an 8-bit quantized convolutional neural network (CNN) trained directly on high-frequency IMU spectral FFT waveforms. By classifying live vibration harmonic anomalies at 100Hz directly on the ESP32-S3 chip, it identifies joint fractures and thermal buckling in 9ms, bypassing cell mesh latency.";
+      }
+      if (lower.includes('report') || lower.includes('kazipet')) {
+        return "Kazipet Sector (KZP-03) Report:\n- Incident ID: INC-BROKEN-RAIL-3814\n- Classification: Broken Rail / Joint Fracture\n- Max vertical acceleration peak: 8.9G\n- AI Intervention: Force Red Signal interlock, RF emergency broadcast\n- Status: Halted (Tamil Nadu Express 12621 secured at Km 184.2).";
+      }
+
+      return "I have analyzed your telemetry query. All active sector nodes are reporting nominal baselines. To inspect emergency logs, select one of the suggested prompts or trigger a simulated event in the Command Center.";
+    }
+  </script>
+</body>
+</html>

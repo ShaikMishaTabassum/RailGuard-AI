@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RailGuard AI | Cognitive Derailment Prevention & Real-Time Monitoring</title>
+  <meta name="description" content="RailGuard AI combines low-cost edge sensing, on-chip TinyML inference, and an autonomous multi-agent loop to prevent railway derailments in under 5 seconds." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <div class="ambient-glow"></div>
+
+  <!-- ============ HEADER ============ -->
+  <header class="main-header" id="main-header">
+    <div class="header-container">
+      <a href="#" class="logo">
+        <span class="logo-accent">RAIL</span>GUARD<span class="logo-dot">.AI</span>
+      </a>
+      <nav class="nav-links" id="nav-links">
+        <a href="#mission"    class="nav-link"><span class="nav-num">01/</span> MISSION</a>
+        <a href="#technology" class="nav-link"><span class="nav-num">02/</span> TECHNOLOGY</a>
+        <a href="#capabilities" class="nav-link"><span class="nav-num">03/</span> CAPABILITIES</a>
+        <a href="/dashboard.html" class="nav-link nav-highlight"><span class="nav-num">04/</span> COMMAND CENTER</a>
+        <a href="/india-map.html" class="nav-link"><span class="nav-num">05/</span> INDIA MAP</a>
+        <a href="/ai.html" class="nav-link"><span class="nav-num">06/</span> AI COPILOT</a>
+        <a href="#hardware"   class="nav-link"><span class="nav-num">07/</span> HARDWARE</a>
+        <a href="#comparison" class="nav-link"><span class="nav-num">08/</span> OUR EDGE</a>
+      </nav>
+      <div class="system-status">
+        <span class="status-indicator" id="global-status-dot"></span>
+        <span class="status-text"    id="global-status-text">COGNITIVE NOMINAL</span>
+      </div>
+      <!-- Theme Switcher Toggle -->
+      <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme" style="background: none; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 50px; font-family: var(--mono); font-size: 0.68rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--t-fast);">
+        <span id="theme-toggle-icon">☀</span> <span id="theme-toggle-text">LIGHT</span>
+      </button>
+      <button class="mobile-nav-toggle" id="mobile-toggle" aria-label="Toggle Navigation">
+        <span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero-section">
+    <canvas id="hero-canvas" class="hero-canvas"></canvas>
+    <div class="hero-overlay"></div>
+    <div class="container hero-container">
+      <div class="hero-content">
+        <div class="badge-row">
+          <span class="hero-badge">ESP32 + TinyML AT THE EDGE</span>
+          <span class="hero-badge orange">MULTI-AGENT DECISION SYSTEM</span>
+        </div>
+        <h1 class="hero-title">
+          RAILGUARD AI<br>
+          <span class="text-glow" style="color: var(--cyan); text-shadow: 0 0 15px var(--cyan-glow);">Predict Railway Failures Before They Happen</span>
+        </h1>
+        <p class="hero-subtitle">
+          AI-powered autonomous railway safety platform that detects track failures, predicts derailment risks, and prevents accidents in real time.
+        </p>
+        
+        <!-- Glassmorphism Stats Cards -->
+        <div class="hero-stats-glass" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 32px 0; max-width: 800px;">
+          <div class="stat-card-glass" style="background: rgba(14, 29, 54, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 195, 255, 0.15); border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 30px rgba(0,0,0,0.4);">
+            <span class="hs-num" style="font-size: 1.8rem; font-weight: 800; color: var(--cyan); letter-spacing: -0.02em;">98%</span>
+            <span class="hs-lbl" style="font-family: var(--mono); font-size: 0.6rem; color: var(--text-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">Detection Accuracy</span>
+          </div>
+          <div class="stat-card-glass" style="background: rgba(14, 29, 54, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 195, 255, 0.15); border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 30px rgba(0,0,0,0.4);">
+            <span class="hs-num" style="font-size: 1.8rem; font-weight: 800; color: var(--green); letter-spacing: -0.02em;">4.8s</span>
+            <span class="hs-lbl" style="font-family: var(--mono); font-size: 0.6rem; color: var(--text-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">Response Time</span>
+          </div>
+          <div class="stat-card-glass" style="background: rgba(14, 29, 54, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 195, 255, 0.15); border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 30px rgba(0,0,0,0.4);">
+            <span class="hs-num" style="font-size: 1.8rem; font-weight: 800; color: var(--amber); letter-spacing: -0.02em;">24/7</span>
+            <span class="hs-lbl" style="font-family: var(--mono); font-size: 0.6rem; color: var(--text-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">Monitoring</span>
+          </div>
+          <div class="stat-card-glass" style="background: rgba(14, 29, 54, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(0, 195, 255, 0.15); border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 30px rgba(0,0,0,0.4);">
+            <span class="hs-num" style="font-size: 1.8rem; font-weight: 800; color: var(--orange); letter-spacing: -0.02em;">1200+</span>
+            <span class="hs-lbl" style="font-family: var(--mono); font-size: 0.6rem; color: var(--text-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">Passengers Protected</span>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <a href="/dashboard.html?tab=twin" class="btn btn-primary" id="hero-cta" style="background: var(--cyan); border: 1px solid var(--cyan); color: #081120; box-shadow: 0 4px 20px var(--cyan-glow);">&#128644; Launch Digital Twin</a>
+          <a href="/dashboard.html" class="btn btn-secondary" style="border: 1px solid rgba(0, 195, 255, 0.3); color: var(--cyan); background: rgba(0, 195, 255, 0.05); margin-left: 10px;">&#128202; Open Command Center</a>
+          <a href="/ai.html" class="btn btn-secondary" style="border: 1px solid rgba(255, 107, 53, 0.3); color: var(--orange); background: rgba(255, 107, 53, 0.05); margin-left: 10px;">&#128172; AI Assistant</a>
+        </div>
+      </div>
+    </div>
+    <div class="hero-scroll-hint">
+      <span class="scroll-line"></span>
+      <span class="scroll-text">SCROLL TO EXPLORE</span>
+    </div>
+  </section>
+
+  <!-- ============ TELEMETRY TICKER ============ -->
+  <div class="telemetry-ticker">
+    <div class="ticker-wrapper">
+      <div class="ticker-content" id="ticker-1">
+        <span>&#9679; COMMAND_ROOM: ACTIVE</span>
+        <span>&#9679; DERAILMENT_RISK: 2% (NOMINAL)</span>
+        <span>&#9679; WEATHER CORRELATION: STABLE</span>
+        <span>&#9679; LORA MESH: 24 NODES ONLINE</span>
+        <span>&#9679; DIGITAL TWIN LINK: SYNCHRONIZED</span>
+        <span>&#9679; AGENTIC AUTONOMY: LEVEL 5 (FULL OVERRIDE)</span>
+        <span>&#9679; SIGNAL 7B: GREEN / CLEAR</span>
+        <span>&#9679; TRAIN 12621: NOMINAL STATUS</span>
+        <span>&#9679; SCR ZONE: SECUNDERABAD OUTSKIRTS</span>
+        <span>&#9679; EDGE INFERENCE: 8.7ms</span>
+        <span>&#9679; CLASSIFICATION CONFIDENCE: 99.8%</span>
+        <span>&#9679; LAST FAULT BLOCKED: 0 DAYS AGO</span>
+      </div>
+      <div class="ticker-content" aria-hidden="true">
+        <span>&#9679; COMMAND_ROOM: ACTIVE</span>
+        <span>&#9679; DERAILMENT_RISK: 2% (NOMINAL)</span>
+        <span>&#9679; WEATHER CORRELATION: STABLE</span>
+        <span>&#9679; LORA MESH: 24 NODES ONLINE</span>
+        <span>&#9679; DIGITAL TWIN LINK: SYNCHRONIZED</span>
+        <span>&#9679; AGENTIC AUTONOMY: LEVEL 5 (FULL OVERRIDE)</span>
+        <span>&#9679; SIGNAL 7B: GREEN / CLEAR</span>
+        <span>&#9679; TRAIN 12621: NOMINAL STATUS</span>
+        <span>&#9679; SCR ZONE: SECUNDERABAD OUTSKIRTS</span>
+        <span>&#9679; EDGE INFERENCE: 8.7ms</span>
+        <span>&#9679; CLASSIFICATION CONFIDENCE: 99.8%</span>
+        <span>&#9679; LAST FAULT BLOCKED: 0 DAYS AGO</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 01 / MISSION ============ -->
+  <section id="mission" class="section mission-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">01 /</span>
+        <h2 class="section-title">OUR MISSION: AUTONOMOUS DERAILMENT PREVENTION</h2>
+      </div>
+      <div class="grid grid-2 align-center">
+        <div class="mission-text-block">
+          <p class="lead-text">
+            Traditional railway telemetry focuses purely on logging and reports. Sensor data is streamed to a distant server, plotted on a chart, and left for human operators to interpret. By the time an operator flags an anomaly, it is too late.
+          </p>
+          <p>
+            When extreme summer heat causes rail tracks to expand and buckle, or when continuous high-speed traffic causes joint fractures, a static report cannot stop an approaching express train running at 110 km/h with thousands of passengers. Every second of human confirmation delay adds hundreds of meters to the train's braking trajectory.
+          </p>
+          <p class="highlight-box">
+            <strong>RailGuard AI changes the paradigm.</strong> We build the cognitive infrastructure. Solar-powered edge-sensing nodes classify physical track stress locally using on-chip TinyML neural networks, while our multi-agent AI loop processes live railway network data, evaluates risk, overrides sector signals to RED, and applies emergency braking in under 5 seconds.
+          </p>
+          <div class="mission-chips">
+            <span class="chip green">&#10003; Local TinyML Inference</span>
+            <span class="chip orange">&#9888; Autonomous Emergency Signal Control</span>
+            <span class="chip white">&#8987; Sub-5s Response Window</span>
+          </div>
+        </div>
+        <div class="mission-visual">
+          <div class="tech-graphic-container">
+            <img src="/assets/concept.png" alt="RailGuard AI System Concept" class="concept-img" />
+            <div class="rotate-ring"></div>
+            <div class="pulse-ring"></div>
+            <div class="floating-telemetry">
+              <div class="t-line"><span class="t-lbl">DECISION SYSTEM</span><span class="t-val text-green">AGENTIC LOOP</span></div>
+              <div class="t-line"><span class="t-lbl">EDGE LATENCY</span><span class="t-val">&lt;9ms</span></div>
+              <div class="t-line"><span class="t-lbl">MITIGATION</span><span class="t-val text-orange">AUTONOMOUS HALT</span></div>
+              <div class="t-line"><span class="t-lbl">INTELLIGENCE</span><span class="t-val">WEATHER + RAIL</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 / TECHNOLOGY ============ -->
+  <section id="technology" class="section tech-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">02 /</span>
+        <h2 class="section-title">THE COGNITIVE PIPELINE</h2>
+      </div>
+      <div class="stepper-container">
+        <div class="stepper-nav">
+          <button class="step-btn active" data-step="1">
+            <span class="s-num">01</span>
+            <span class="s-name">EDGE MONITORING</span>
+          </button>
+          <button class="step-btn" data-step="2">
+            <span class="s-num">02</span>
+            <span class="s-name">TINYML INFERENCE</span>
+          </button>
+          <button class="step-btn" data-step="3">
+            <span class="s-num">03</span>
+            <span class="s-name">MULTI-AGENT CORRELATION</span>
+          </button>
+          <button class="step-btn" data-step="4">
+            <span class="s-num">04</span>
+            <span class="s-name">AUTONOMOUS HALT</span>
+          </button>
+        </div>
+
+        <div class="step-content-display">
+
+          <!-- STEP 1 -->
+          <div class="step-panel active" id="step-panel-1">
+            <div class="pipeline-stage-layout">
+              <div class="panel-details">
+                <span class="panel-eyebrow">STAGE 01 — EDGE SENSING</span>
+                <h3>High-Frequency Vibration &amp; Strain Capture</h3>
+                <p>Custom telemetry nodes, clamped magnetically to the web of the rail, continuously sample 3-axis acceleration and gyroscope metrics at 100Hz. Ambient conditions are tracked side-by-side to correlate environmental stressors like track temperature and flood levels.</p>
+                <ul class="panel-list">
+                  <li>3-axis raw IMU sampling every 10ms</li>
+                  <li>Magnetic clamp — zero-tool installation on live track</li>
+                  <li>IP68 rugged aluminum enclosure</li>
+                  <li>Ultra-low-power sleep with wake-on-vibration trigger</li>
+                </ul>
+              </div>
+              <div class="pipeline-anim" id="pipeline-anim-1">
+                <div class="anim-rail"></div>
+                <div class="anim-sensor-node"><span class="anim-led"></span></div>
+                <div class="anim-pulse-ring r1"></div>
+                <div class="anim-pulse-ring r2"></div>
+                <div class="anim-pulse-ring r3"></div>
+                <div class="anim-data-stream">
+                  <span class="anim-tag">VIB 1.02G</span>
+                  <span class="anim-tag">TEMP 34°C</span>
+                  <span class="anim-tag">100Hz</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="step-panel" id="step-panel-2">
+            <div class="pipeline-stage-layout">
+              <div class="panel-details">
+                <span class="panel-eyebrow">STAGE 02 — EDGE TinyML</span>
+                <h3>On-Chip Real-Time Classification</h3>
+                <p>The ESP32 runs a quantized neural network locally — evaluating physical vibrations and detecting fracture, buckle, and displacement classes in under 9ms without cloud dependency.</p>
+                <ul class="panel-list">
+                  <li>8-bit quantized CNN runs entirely on-chip</li>
+                  <li>FFT-based spectral analysis done at the edge</li>
+                  <li>98.1% accuracy classifying joint fractures and buckling</li>
+                  <li>Operates independently of cellular networks</li>
+                </ul>
+              </div>
+              <div class="pipeline-anim" id="pipeline-anim-2">
+                <div class="anim-neural-net">
+                  <div class="nn-layer input"><span></span><span></span><span></span><span></span></div>
+                  <div class="nn-connections"></div>
+                  <div class="nn-layer hidden"><span></span><span></span><span></span></div>
+                  <div class="nn-connections"></div>
+                  <div class="nn-layer output">
+                    <span class="nn-out nominal">NOMINAL</span>
+                    <span class="nn-out warn">BUCKLE</span>
+                    <span class="nn-out crit">FRACTURE</span>
+                  </div>
+                </div>
+                <div class="anim-inference-badge">&lt;9ms INFERENCE</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div class="step-panel" id="step-panel-3">
+            <div class="pipeline-stage-layout">
+              <div class="panel-details">
+                <span class="panel-eyebrow">STAGE 03 — MULTI-AGENT INFERENCE</span>
+                <h3>Agentic Risk &amp; Scenario Correlation</h3>
+                <p>When an anomaly hits the LoRa mesh, specialized AI agents cross-reference telemetry, weather, and live train positions to reach a transparent multi-agent consensus.</p>
+                <ul class="panel-list">
+                  <li>Track Agent matches acceleration against track profiles</li>
+                  <li>Weather Agent computes rainfall and heat structural risk</li>
+                  <li>Wheel Agent correlates onboard bogie sensor values</li>
+                  <li>Decision Agent initiates speed restriction or emergency halt</li>
+                </ul>
+              </div>
+              <div class="pipeline-anim" id="pipeline-anim-3">
+                <div class="anim-agent-hub">
+                  <div class="agent-orbit a-track"><span>Track</span></div>
+                  <div class="agent-orbit a-wheel"><span>Wheel</span></div>
+                  <div class="agent-orbit a-weather"><span>Weather</span></div>
+                  <div class="agent-orbit a-maint"><span>Maint</span></div>
+                  <div class="agent-core">AI</div>
+                </div>
+                <div class="anim-consensus-line">CONSENSUS → ACTION</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4 -->
+          <div class="step-panel" id="step-panel-4">
+            <div class="pipeline-stage-layout">
+              <div class="panel-details">
+                <span class="panel-eyebrow">STAGE 04 — ACTION &amp; HALT</span>
+                <h3>Direct Interlocking Override &amp; Cabin Alert</h3>
+                <p>The system bypasses human-verification delays — flipping sector signals to RED and broadcasting emergency brake commands directly to locomotive cabins in under 5 seconds.</p>
+                <ul class="panel-list">
+                  <li>Direct integration with electronic interlocks</li>
+                  <li>Emergency RF brake signal to locomotive cabin</li>
+                  <li>Real-time telemetry shared with control room</li>
+                  <li>Cryptographic signature on every command</li>
+                </ul>
+              </div>
+              <div class="pipeline-anim" id="pipeline-anim-4">
+                <div class="anim-signal-tower">
+                  <div class="signal-light green on"></div>
+                  <div class="signal-light amber"></div>
+                  <div class="signal-light red flash"></div>
+                </div>
+                <div class="anim-train-halt">
+                  <div class="halt-train"></div>
+                  <div class="halt-brake-trail"></div>
+                </div>
+                <div class="anim-halt-label">TRAIN HALTED — 4.8s</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /step-content-display -->
+      </div><!-- /stepper-container -->
+    </div>
+  </section>
+
+  <!-- ============ 03 / COGNITIVE CAPABILITIES ============ -->
+  <section id="capabilities" class="section capabilities-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">03 /</span>
+        <h2 class="section-title">COGNITIVE CAPABILITIES BEYOND CHARTS</h2>
+      </div>
+      <p class="section-subtitle">Most railway dashboards log sensor values. RailGuard AI reasons, predicts, simulates, and acts — an integrated cognitive stack judges can explore live in the Command Center.</p>
+
+      <div class="capabilities-hero-demo">
+        <div class="demo-risk-panel">
+          <span class="panel-eyebrow">LIVE RISK COMMAND CENTER</span>
+          <div class="demo-gauge-wrap">
+            <svg class="demo-gauge-svg" viewBox="0 0 120 120">
+              <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+              <circle class="demo-gauge-fill" id="landing-gauge-fill" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="307.88"></circle>
+            </svg>
+            <div class="demo-gauge-center">
+              <span class="demo-gauge-num" id="landing-risk-num">2%</span>
+              <span class="demo-gauge-lbl">DERAILMENT RISK</span>
+            </div>
+          </div>
+          <p class="demo-ai-explanation" id="landing-ai-explanation">
+            <span class="ai-cursor">▌</span>
+          </p>
+        </div>
+        <div class="demo-agent-panel">
+          <span class="panel-eyebrow">MULTI-AGENT DECISION SYSTEM</span>
+          <div class="demo-agent-feed" id="landing-agent-feed"></div>
+        </div>
+      </div>
+
+      <div class="capabilities-grid">
+        <a href="/dashboard.html?tab=twin" class="cap-card" data-cap="twin">
+          <span class="cap-num">01</span>
+          <h3>Digital Twin Railway Map</h3>
+          <p>Click track segments, inspect live sensor telemetry, simulate faults, and view predicted outcomes on an interactive SCR network grid.</p>
+          <span class="cap-link">Open Digital Twin →</span>
+        </a>
+        <a href="/dashboard.html" class="cap-card" data-cap="risk">
+          <span class="cap-num">02</span>
+          <h3>AI Risk Command Center</h3>
+          <p>Live derailment risk score (0–100%) with AI-generated explanations that correlate vibration, weather, and train anomalies in real time.</p>
+          <span class="cap-link">View Risk Engine →</span>
+        </a>
+        <a href="/dashboard.html?tab=predict" class="cap-card" data-cap="predict">
+          <span class="cap-num">03</span>
+          <h3>"Future View" Mode</h3>
+          <p>Current state, 24-hour failure probability, and 7-day maintenance forecasts — predictive intelligence most dashboards never show.</p>
+          <span class="cap-link">Explore Predictions →</span>
+        </a>
+        <a href="/dashboard.html?tab=ai" class="cap-card" data-cap="ai">
+          <span class="cap-num">04</span>
+          <h3>AI Investigation Agent</h3>
+          <p>Ask why a track is high risk. Get forensic answers citing vibration deltas, temperature rises, and historical defect pattern matches.</p>
+          <span class="cap-link">Chat with AI →</span>
+        </a>
+        <a href="/dashboard.html?tab=simulator" class="cap-card" data-cap="replay">
+          <span class="cap-num">05</span>
+          <h3>Fault Replay Timeline</h3>
+          <p>Black-box replay: scrub backward through sensor changes and watch how a fault developed second-by-second before autonomous halt.</p>
+          <span class="cap-link">Launch Replay →</span>
+        </a>
+        <a href="/dashboard.html?tab=ai" class="cap-card" data-cap="copilot">
+          <span class="cap-num">06</span>
+          <h3>Maintenance Copilot</h3>
+          <p>Auto-generated inspection checklists, tool requirements, repair time estimates, and priority levels for field crews.</p>
+          <span class="cap-link">See Copilot →</span>
+        </a>
+        <a href="/dashboard.html?tab=twin" class="cap-card" data-cap="weather">
+          <span class="cap-num">07</span>
+          <h3>Weather + Rail Intelligence</h3>
+          <p>Fuse rainfall, temperature, wind, and flood risk with edge sensor data to quantify settlement and buckling probability.</p>
+          <span class="cap-link">Try Weather Fusion →</span>
+        </a>
+        <a href="/dashboard.html?tab=simulator" class="cap-card" data-cap="sim">
+          <span class="cap-num">08</span>
+          <h3>Emergency Decision Simulator</h3>
+          <p>Inject broken rails, wheel cracks, floods, or excessive vibration — then watch the AI committee respond in under 5 seconds.</p>
+          <span class="cap-link">Run Simulation →</span>
+        </a>
+        <a href="/dashboard.html?tab=twin" class="cap-card" data-cap="3d">
+          <span class="cap-num">09</span>
+          <h3>3D Track Visualization</h3>
+          <p>Three.js WebGL rendering of railway track, sensor nodes, fault zones, flood water, and live train movement.</p>
+          <span class="cap-link">View 3D Scene →</span>
+        </a>
+        <a href="/dashboard.html" class="cap-card" data-cap="agents">
+          <span class="cap-num">10</span>
+          <h3>Multi-Agent AI System</h3>
+          <p>Track, Wheel, Weather, Maintenance, and Decision agents debate telemetry and vote on speed restrictions and signal overrides.</p>
+          <span class="cap-link">Watch Agents →</span>
+        </a>
+      </div>
+
+      <div class="capabilities-cta-row">
+        <a href="/dashboard.html" class="btn btn-primary btn-lg">&#9654; LAUNCH FULL COGNITIVE COMMAND CENTER</a>
+        <span class="cta-hint">All 10 capabilities integrated in one live demo environment</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 / HARDWARE ============ -->
+  <section id="hardware" class="section hardware-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">04 /</span>
+        <h2 class="section-title">THE HARDWARE INTERFACE</h2>
+      </div>
+      <p class="section-subtitle">Stark, industrial hardware components designed from scratch for extreme railway environments in India.</p>
+
+      <div class="grid grid-3">
+        <div class="spec-card" id="hw-card-1">
+          <div class="spec-img-wrap">
+            <img src="/assets/hw_node.png" alt="RailGuard Edge Node" class="spec-img" />
+            <div class="spec-badge-pill">NODE</div>
+          </div>
+          <h3>RailGuard Edge Node v1.2</h3>
+          <p>Rugged IP68 aluminum enclosure, magnetically clamped to the rail web with 50kg neodymium anchors. Zero-tool installation, 90-day battery life without solar.</p>
+          <ul class="spec-list">
+            <li>ESP32-S3 Dual-Core 240MHz</li>
+            <li>MPU-6050 6-DOF IMU at 100Hz</li>
+            <li>18650 LiFePO4 + 2W solar panel</li>
+            <li>Operating range: -20°C to 70°C</li>
+          </ul>
+        </div>
+
+        <div class="spec-card" id="hw-card-2">
+          <div class="spec-img-wrap">
+            <img src="/assets/lora_gateway.png" alt="LoRaWAN Mesh Gateway" class="spec-img" />
+            <div class="spec-badge-pill">COMMS</div>
+          </div>
+          <h3>LoRaWAN Mesh Gateway</h3>
+          <p>Solar-powered repeater nodes spaced every 1.5km to form a self-healing mesh network — ensuring alert delivery even during complete cellular blackout zones on remote SCR sections.</p>
+          <ul class="spec-list">
+            <li>868 / 915 MHz LoRa long range</li>
+            <li>12km point-to-point range</li>
+            <li>Cryptographically signed packets</li>
+            <li>Self-healing dynamic mesh routing</li>
+          </ul>
+        </div>
+
+        <div class="spec-card" id="hw-card-3">
+          <div class="spec-img-wrap">
+            <img src="/assets/cabin_receiver.png" alt="Locomotive Cabin Receiver" class="spec-img" />
+            <div class="spec-badge-pill">OVERRIDE</div>
+          </div>
+          <h3>Locomotive Cab Receiver</h3>
+          <p>Installed in the locomotive cabin, wired directly into the brake circuit. Monitors the regional RailGuard RF channel and triggers vacuum brakes automatically on receiving a signed emergency packet.</p>
+          <ul class="spec-list">
+            <li>Redundant dual RF receiver</li>
+            <li>Direct vacuum brake relay trigger</li>
+            <li>LED + audio alert in cab dashboard</li>
+            <li>Tamper-proof encrypted command auth</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 / OUR EDGE ============ -->
+  <section id="comparison" class="section comparison-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">05 /</span>
+        <h2 class="section-title">WHAT MAKES RAILGUARD UNIQUE</h2>
+      </div>
+
+      <div class="grid grid-2 align-center" style="margin-bottom:60px">
+        <div>
+          <p class="lead-text">Traditional monitoring systems record telemetry. They do not decide, verify, or act.</p>
+          <p>RailGuard AI is built specifically for Indian Railways — high density, extreme heat, constrained budgets, and zero tolerance for human delay. Our architecture doesn't just sense — it reasons, predicts, and stops trains autonomously.</p>
+        </div>
+        <div class="quote-block">
+          <blockquote>
+            "Typical rail telemetry systems solved the physical logging side. But raw data sitting on a dashboard doesn't stop a train in a crisis — autonomous agentic decision loops do. We built the missing cognitive layer."
+          </blockquote>
+          <cite>— RailGuard AI Engineering Team</cite>
+        </div>
+      </div>
+
+      <div class="comparison-table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature / Parameter</th>
+              <th>Traditional Telemetry Systems</th>
+              <th class="col-highlight">RailGuard AI</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Primary Function</strong></td>
+              <td>Data logging, visualization</td>
+              <td class="col-highlight">Predictive prevention + autonomous braking</td>
+            </tr>
+            <tr>
+              <td><strong>AI / Reasoning Layer</strong></td>
+              <td>None — human operator must interpret charts</td>
+              <td class="col-highlight">Full multi-agent decision system</td>
+            </tr>
+            <tr>
+              <td><strong>Processing Location</strong></td>
+              <td>Cloud-only — requires cellular connection</td>
+              <td class="col-highlight">On-chip Edge TinyML — zero cloud needed</td>
+            </tr>
+            <tr>
+              <td><strong>Alert-to-Action Time</strong></td>
+              <td>5–30 minutes (human confirmation delays)</td>
+              <td class="col-highlight">&lt;5 seconds (fully autonomous)</td>
+            </tr>
+            <tr>
+              <td><strong>Weather Correlation</strong></td>
+              <td>None</td>
+              <td class="col-highlight">Real-time weather + sensor fusion risk models</td>
+            </tr>
+            <tr>
+              <td><strong>Deployment Model</strong></td>
+              <td>Centralized, vendor-locked infrastructure</td>
+              <td class="col-highlight">Open-hardware edge mesh — scales per corridor</td>
+            </tr>
+            <tr>
+              <td><strong>Braking Override</strong></td>
+              <td>None</td>
+              <td class="col-highlight">Direct RF cab signals &amp; interlocking override</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONNECT ============ -->
+  <section id="contact" class="section contact-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">06 /</span>
+        <h2 class="section-title">CONNECT WITH THE ENGINEERS</h2>
+      </div>
+      <div class="grid grid-2 align-start">
+        <div class="contact-info">
+          <p class="lead-text">Want to see the physical hardware prototype live, review our Edge Impulse training dataset, or discuss integrating RailGuard with your section of Indian Railways?</p>
+          <p>Our engineering team is based in Hyderabad and runs field tests on the Secunderabad–Bidar section of South Central Railway. Drop us a message — we reply within 24 hours.</p>
+          <div class="info-list">
+            <div class="info-row">
+              <span class="info-icon">&#9679;</span>
+              <div>
+                <div class="info-lbl">HQ LOCATION</div>
+                <div class="info-val">T-Hub Innovation Campus, Madhapur, Hyderabad — 500081</div>
+              </div>
+            </div>
+            <div class="info-row">
+              <span class="info-icon">&#9679;</span>
+              <div>
+                <div class="info-lbl">FIELD TEST CORRIDOR</div>
+                <div class="info-val">Secunderabad Junction Outskirts, SCR Zone — Km 142–165</div>
+              </div>
+            </div>
+            <div class="info-row">
+              <span class="info-icon">&#9679;</span>
+              <div>
+                <div class="info-lbl">ENGINEERING CONTACT</div>
+                <div class="info-val">eng@railguard.ai</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-form-card">
+          <form id="legacy-contact-form" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="form-name">Full Name *</label>
+                <input type="text" id="form-name" class="form-control" placeholder="Arjun Sharma" required />
+              </div>
+              <div class="form-group">
+                <label for="form-email">Email Address *</label>
+                <input type="email" id="form-email" class="form-control" placeholder="arjun@railways.gov.in" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="form-org">Organization / Department</label>
+              <input type="text" id="form-org" class="form-control" placeholder="Indian Railways — Signal &amp; Telecom" />
+            </div>
+            <div class="form-group">
+              <label for="form-interest">Area of Interest</label>
+              <select id="form-interest" class="form-control">
+                <option>Hardware Prototype Demo</option>
+                <option>Integration with Existing Systems</option>
+                <option>Training Dataset / ML Review</option>
+                <option>General Inquiry</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="form-msg">Message *</label>
+              <textarea id="form-msg" class="form-control" rows="4" placeholder="Tell us about your requirements or questions..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="form-submit-btn">
+              SUBMIT INQUIRY
+            </button>
+            <div class="form-success" id="legacy-form-success">
+              &#10003;&nbsp; Inquiry received. Our engineering team will respond within 24 hours.
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07 / CONNECT WITH RAILGUARD ============ -->
+  <section id="connect" class="section contact-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-num">07 /</span>
+        <h2 class="section-title">CONNECT WITH RAILGUARD</h2>
+      </div>
+      <div class="section-desc" style="color:var(--text-2);margin-bottom:48px;font-size:1.1rem;">
+        Partner with us to deploy the future of railway safety across Indian Railways SCR Zone and beyond.
+      </div>
+      <div class="grid grid-2">
+        <div class="contact-form-card card" style="padding:32px;">
+          <h3 style="margin-bottom:20px;font-size:1.1rem;">Request Early Access</h3>
+          <form id="contact-form">
+            <input type="text"  id="cf-name"    placeholder="Your Name" required />
+            <input type="email" id="cf-email"   placeholder="Official Email" required />
+            <input type="text"  id="cf-org"     placeholder="Railway Division / Organization" />
+            <select id="cf-role">
+              <option value="">Select Role</option>
+              <option>Station Master / Control Room Operator</option>
+              <option>Track Maintenance Engineer</option>
+              <option>Railway Safety Officer</option>
+              <option>RDSO Researcher</option>
+              <option>Signal &amp; Telecommunication Engineer</option>
+              <option>Researcher / Academic</option>
+              <option>Other</option>
+            </select>
+            <textarea id="cf-message" placeholder="How would you use RailGuard AI at your division?"></textarea>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px;">SUBMIT REQUEST</button>
+          </form>
+          <div id="form-success" hidden class="form-success-msg">
+            ✓ Request received. The RailGuard team will contact you within 48 hours.
+          </div>
+        </div>
+        <div class="card" style="padding:32px;display:flex;flex-direction:column;gap:24px;justify-content:center;">
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <span style="font-size:1.5rem;opacity:0.8;">▶</span>
+            <div>
+              <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.1em;color:var(--text-3);margin-bottom:4px;">LIVE DEMO</div>
+              <a href="/simulation-3d.html" style="color:var(--cyan);text-decoration:none;font-size:0.95rem;">Watch End-to-End Autonomous Intervention →</a>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <span style="font-size:1.5rem;opacity:0.8;">⌨</span>
+            <div>
+              <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.1em;color:var(--text-3);margin-bottom:4px;">GITHUB</div>
+              <a href="https://github.com/ShaikMishaTabassum/railguard-ai" target="_blank" style="color:var(--cyan);text-decoration:none;font-size:0.95rem;">github.com/ShaikMishaTabassum/railguard-ai →</a>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <span style="font-size:1.5rem;opacity:0.8;">◫</span>
+            <div>
+              <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.1em;color:var(--text-3);margin-bottom:4px;">COMMAND CENTER</div>
+              <a href="/dashboard.html" style="color:var(--cyan);text-decoration:none;font-size:0.95rem;">Launch Cognitive Dashboard →</a>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <span style="font-size:1.5rem;opacity:0.8;">⚡</span>
+            <div>
+              <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.1em;color:var(--text-3);margin-bottom:4px;">API DOCUMENTATION</div>
+              <a href="http://localhost:8000/docs" target="_blank" style="color:var(--cyan);text-decoration:none;font-size:0.95rem;">FastAPI Swagger Docs → localhost:8000/docs</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-logo">
+        <span class="logo-accent">RAIL</span>GUARD<span class="logo-dot">.AI</span>
+      </div>
+      <p class="footer-tagline">
+        Cognitive Railway Safety &amp; Derailment Prevention — Built in India, for India's 1.2 billion rail passengers.
+      </p>
+      <p class="footer-copy">
+        &copy; 2026 RailGuard AI &mdash; India Innovation Hackathon Entry &mdash; Open Source (Apache 2.0)
+      </p>
+      <div class="footer-status">
+        <span class="footer-pulse"></span> SECURE GATEWAY ACTIVE
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>

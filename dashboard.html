@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RailGuard AI | Cognitive Command Center</title>
+  <meta name="description" content="RailGuard AI Cognitive Command Center - Autonomous derailment prevention dashboard for Indian Railways." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="dashboard-body">
+
+  <div class="track-pattern-bg"></div>
+  <div class="ambient-glow"></div>
+
+  <!-- Critical Infrastructure Alert -->
+  <div class="critical-alert-overlay" id="critical-alert-overlay" hidden>
+    <div class="critical-alert-modal">
+      <div class="critical-alert-icon">⚠</div>
+      <div class="critical-alert-title">Critical Infrastructure Warning</div>
+      <div class="critical-alert-risk">Risk Level: <span id="critical-alert-risk-val">91%</span></div>
+      <p class="critical-alert-action" id="critical-alert-action">
+        Recommended Action: Reduce speed immediately to 40 km/h and dispatch inspection crew.
+      </p>
+      <button class="critical-alert-dismiss" id="critical-alert-dismiss">Acknowledge &amp; Intervene</button>
+    </div>
+  </div>
+
+  <!-- Emergency Mode Banner -->
+  <div class="emergency-mode-banner" id="emergency-mode-banner" hidden>
+    <span class="emb-icon">⚠</span>
+    <div class="emb-text">
+      <strong>EMERGENCY MODE ACTIVE</strong>
+      <span id="emb-message">Risk threshold exceeded. Autonomous interventions recommended.</span>
+    </div>
+    <div class="emb-actions" id="emb-actions">
+      <span class="emb-action">↓ Reduce Speed</span>
+      <span class="emb-action">■ Stop Trains</span>
+      <span class="emb-action">☎ Dispatch Crew</span>
+      <span class="emb-action">📡 Notify Control Room</span>
+    </div>
+  </div>
+
+  <!-- Alert Center -->
+  <div class="alert-center" id="alert-center">
+    <div class="alert-center-header">
+      <span class="hud-title"><span class="hud-dot orange"></span> ALERT CENTER</span>
+      <button class="alert-dismiss" id="alert-dismiss" aria-label="Dismiss">×</button>
+    </div>
+    <div class="alert-center-body" id="alert-center-body">
+      <div class="alert-empty">No active alerts. Network nominal.</div>
+    </div>
+    <div class="alert-notify-channels">
+      <span class="notify-chip active" id="notify-dashboard">● Dashboard</span>
+      <span class="notify-chip" id="notify-sms">✉ SMS</span>
+      <span class="notify-chip" id="notify-email">@ Email</span>
+      <span class="notify-chip" id="notify-mobile">📱 Mobile</span>
+    </div>
+  </div>
+
+  <!-- ============ DASHBOARD HEADER ============ -->
+  <header class="dashboard-header">
+    <div class="dash-header-container">
+      <div class="logo-area">
+        <a href="/" class="logo">
+          <span class="logo-accent">RAIL</span>GUARD<span class="logo-dot">.AI</span>
+        </a>
+        <span class="dash-badge">COGNITIVE COMMAND CENTER</span>
+      </div>
+
+      <!-- Live weather simulation inputs (Weather + Rail Intelligence) -->
+      <div class="weather-hud">
+        <span class="hud-title"><span class="hud-dot"></span> WEATHER REGULATOR</span>
+        <div class="hud-controls">
+          <div class="hud-control-group">
+            <label for="weather-rain">Rainfall: <span id="val-rain">12</span>mm</label>
+            <input type="range" id="weather-rain" min="0" max="150" value="12" class="hud-slider" />
+          </div>
+          <div class="hud-control-group">
+            <label for="weather-temp">Rail Temp: <span id="val-temp">34</span>°C</label>
+            <input type="range" id="weather-temp" min="10" max="75" value="34" class="hud-slider" />
+          </div>
+          <div class="hud-control-group">
+            <label for="weather-wind">Wind: <span id="val-wind">15</span>km/h</label>
+            <input type="range" id="weather-wind" min="0" max="80" value="15" class="hud-slider" />
+          </div>
+        </div>
+        <div class="weather-intel-readout" id="weather-intel-readout">
+          <span class="intel-lbl">FLOOD RISK</span>
+          <span class="intel-val text-green" id="flood-risk-val">LOW (4%)</span>
+        </div>
+      </div>
+
+      <div class="system-time-hud">
+        <span class="time-lbl">IST</span>
+        <span class="time-val" id="dash-clock">--:--:--</span>
+      </div>
+      
+      <!-- Theme Switcher Toggle -->
+      <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme" style="background: none; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 50px; font-family: var(--mono); font-size: 0.68rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--t-fast); margin-right: 12px;">
+        <span id="theme-toggle-icon">☀</span> <span id="theme-toggle-text">LIGHT</span>
+      </button>
+
+      <a href="/" class="btn-home-back">← RETURN TO LANDING</a>
+    </div>
+  </header>
+
+  <!-- ============ DASHBOARD MAIN CONTAINER ============ -->
+  <div class="dashboard-main-wrapper">
+    
+    <!-- LEFT SIDEBAR: VIEW NAVIGATION -->
+    <aside class="dashboard-sidebar">
+      <nav class="sidebar-nav">
+        <button class="side-nav-btn active" data-view="overview">
+          <span class="nav-icon">◫</span>
+          <div class="nav-text-group">
+            <span class="nav-title">Dashboard</span>
+            <span class="nav-desc">Mission Control · Live KPIs</span>
+          </div>
+        </button>
+
+        <button class="side-nav-btn" data-view="digital-twin">
+          <span class="nav-icon">&#9638;</span>
+          <div class="nav-text-group">
+            <span class="nav-title">Digital Twin</span>
+            <span class="nav-desc">3D Track · Sensors · Faults</span>
+          </div>
+        </button>
+        
+        <button class="side-nav-btn" data-view="future-view">
+          <span class="nav-icon">&#8987;</span>
+          <div class="nav-text-group">
+            <span class="nav-title">Future View</span>
+            <span class="nav-desc">Predictive Forecast Models</span>
+          </div>
+        </button>
+        
+        <button class="side-nav-btn" data-view="incident-simulator">
+          <span class="nav-icon">&#9888;</span>
+          <div class="nav-text-group">
+            <span class="nav-title">Incident Console</span>
+            <span class="nav-desc">Timeline · Decision Replay</span>
+          </div>
+        </button>
+        
+        <button class="side-nav-btn" data-view="ai-copilot">
+          <span class="nav-icon">&#128172;</span>
+          <div class="nav-text-group">
+            <span class="nav-title">AI Agents</span>
+            <span class="nav-desc">Multi-Agent Diagnostics</span>
+          </div>
+        </button>
+
+        <a href="/india-map.html" class="side-nav-btn" style="text-decoration: none;">
+          <span class="nav-icon">🗺️</span>
+          <div class="nav-text-group">
+            <span class="nav-title">India Map</span>
+            <span class="nav-desc">Geospatial Network view</span>
+          </div>
+        </a>
+      </nav>
+
+      <!-- AI Risk Command Center (Live Gauge & Explanation Panel) -->
+      <div class="risk-command-panel">
+        <span class="panel-eyebrow">RISK COMMAND CENTER</span>
+        <div class="risk-gauge-container">
+          <svg class="risk-gauge-svg" viewBox="0 0 120 120">
+            <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+            <circle class="gauge-fill" id="gauge-fill-circle" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"></circle>
+          </svg>
+          <div class="gauge-labels">
+            <span class="gauge-num" id="gauge-risk-val">2%</span>
+            <span class="gauge-lbl" id="gauge-risk-lbl">NOMINAL</span>
+          </div>
+        </div>
+        <div class="risk-explanation-panel">
+          <span class="exp-title">AI ACTIVE EXPLANATION</span>
+          <p class="exp-body" id="risk-explanation-text">
+            All track grids normal. TinyML signals active. LoRa networks reporting stable vibration baselines.
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER AREA: DYNAMIC VIEW PANELS -->
+    <main class="dashboard-content-area">
+
+      <!-- PANEL 0: DASHBOARD OVERVIEW -->
+      <section class="dash-view-panel active" id="view-overview">
+        <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;">
+          <div class="kpi-card" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+            <div class="kpi-icon" style="font-size: 1.5rem; color: var(--green);">◉</div>
+            <span class="kpi-label" style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase;">System Health</span>
+            <span class="kpi-value text-green" id="kpi-health" style="font-size: 1.8rem; font-weight: 800;">94%</span>
+            <span class="kpi-trend" style="font-family: var(--mono); font-size: 0.65rem; color: var(--text-2);">↑ Stable across 24 nodes</span>
+          </div>
+          <div class="kpi-card" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+            <div class="kpi-icon" style="font-size: 1.5rem; color: var(--cyan);">🚆</div>
+            <span class="kpi-label" style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase;">Live Trains</span>
+            <span class="kpi-value" id="kpi-trains" style="font-size: 1.8rem; font-weight: 800; color: var(--text);">7</span>
+            <span class="kpi-trend" style="font-family: var(--mono); font-size: 0.65rem; color: var(--text-2);">SCR corridor active</span>
+          </div>
+          <div class="kpi-card" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+            <div class="kpi-icon" style="font-size: 1.5rem; color: var(--amber);">📡</div>
+            <span class="kpi-label" style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase;">Active Sensors</span>
+            <span class="kpi-value text-green" id="kpi-sensors" style="font-size: 1.8rem; font-weight: 800; color: var(--green);">24</span>
+            <span class="kpi-trend" style="font-family: var(--mono); font-size: 0.65rem; color: var(--text-2);">Nodes online (LoRa mesh)</span>
+          </div>
+          <div class="kpi-card" style="background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 6px;">
+            <div class="kpi-icon" style="font-size: 1.5rem; color: var(--orange);">⚠</div>
+            <span class="kpi-label" style="font-size: 0.75rem; color: var(--text-3); text-transform: uppercase;">Risk Events</span>
+            <span class="kpi-value text-green" id="kpi-alerts" style="font-size: 1.8rem; font-weight: 800; color: var(--green);">0</span>
+            <span class="kpi-trend" id="kpi-alerts-trend" style="font-family: var(--mono); font-size: 0.65rem; color: var(--text-2);">All systems clear</span>
+          </div>
+        </div>
+
+        <div class="overview-charts-row">
+          <div class="overview-chart-card">
+            <div class="chart-header">
+              <span class="chart-title">Track Health Trend</span>
+              <span class="live-dot"></span>
+            </div>
+            <canvas id="chart-track-health" class="overview-chart-canvas"></canvas>
+          </div>
+          <div class="overview-chart-card">
+            <div class="chart-header">
+              <span class="chart-title">Sensor Activity</span>
+              <span class="live-dot"></span>
+            </div>
+            <canvas id="chart-sensor-activity" class="overview-chart-canvas"></canvas>
+          </div>
+          <div class="overview-chart-card">
+            <div class="chart-header">
+              <span class="chart-title">Risk Forecast</span>
+              <span class="live-dot"></span>
+            </div>
+            <canvas id="chart-risk-forecast" class="overview-chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-row grid-2-large">
+          <!-- Active Incidents Table -->
+          <div class="card">
+            <div class="card-header border-bottom" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 class="card-title">Active Risk Incidents</h3>
+                <span class="card-subtitle">Real-time track anomalies and intervention status</span>
+              </div>
+              <button class="map-sim-btn" id="btn-generate-report-overview" style="margin: 0; padding: 6px 14px; border-radius: 4px;">Generate Incident Report</button>
+            </div>
+            <div style="overflow-x: auto; padding: 12px 20px;">
+              <table class="comparison-table" style="min-width: 100%; border: none;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border);">
+                    <th style="padding: 10px; font-size: 0.72rem; font-family: var(--mono); background: transparent;">INCIDENT ID</th>
+                    <th style="padding: 10px; font-size: 0.72rem; font-family: var(--mono); background: transparent;">LOCATION</th>
+                    <th style="padding: 10px; font-size: 0.72rem; font-family: var(--mono); background: transparent;">SEVERITY</th>
+                    <th style="padding: 10px; font-size: 0.72rem; font-family: var(--mono); background: transparent;">RISK</th>
+                    <th style="padding: 10px; font-size: 0.72rem; font-family: var(--mono); background: transparent;">STATUS</th>
+                  </tr>
+                </thead>
+                <tbody id="incidents-table-body">
+                  <tr>
+                    <td style="padding: 12px 10px; font-family: var(--mono); font-size: 0.75rem;">INC-12621-03</td>
+                    <td style="padding: 12px 10px; font-size: 0.75rem;">KZP-03 (Kazipet Sector)</td>
+                    <td style="padding: 12px 10px; font-size: 0.75rem;"><span class="emb-action" style="background: var(--red-dim); color: var(--red); border: 1px solid var(--red); padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700;">CRITICAL</span></td>
+                    <td style="padding: 12px 10px; font-family: var(--mono); font-size: 0.75rem; color: var(--red); font-weight: 700;">98%</td>
+                    <td style="padding: 12px 10px; font-size: 0.75rem; color: var(--green); font-weight: 700;">RESOLVED (HALTED)</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 10px; font-family: var(--mono); font-size: 0.75rem;">INC-12457-07</td>
+                    <td style="padding: 12px 10px; font-size: 0.75rem;">SC-01 (Secunderabad Sector)</td>
+                    <td style="padding: 12px 10px; font-size: 0.75rem;"><span class="emb-action" style="background: var(--orange-dim); color: var(--orange); border: 1px solid var(--orange); padding: 2px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 700;">HIGH</span></td>
+                    <td style="padding: 12px 10px; font-family: var(--mono); font-size: 0.75rem; color: var(--orange); font-weight: 700;">72%</td>
+                    <td style="padding: 12px 10px; font-size: 0.75rem; color: var(--green); font-weight: 700;">RESOLVED (SLOWED)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- AI recommendations Panel -->
+          <div class="card">
+            <div class="card-header border-bottom">
+              <h3 class="card-title">AI Safety Directives</h3>
+              <span class="card-subtitle">Real-time safety directives & mitigation advice</span>
+            </div>
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+              <div class="recommendation-box" id="ai-rec-box" style="margin: 0; border-radius: 4px; background: rgba(0, 195, 255, 0.02); border: 1px solid var(--border); border-left: 3px solid var(--cyan);">
+                <span class="rec-title" id="ai-rec-title" style="color: var(--cyan); font-family: var(--mono); font-size: 0.65rem; font-weight: 700; display: block; margin-bottom: 6px;">NOMINAL OPERATIONS ENVELOPE</span>
+                <p class="rec-body" id="ai-rec-text" style="font-family: var(--mono); font-size: 0.75rem; line-height: 1.5; color: var(--text-2);">
+                  All track grids reporting nominal telemetry. Continuous LoRa mesh checks confirm zero structural hazards. Speed restriction envelopes are currently at standard limits (110 km/h).
+                </p>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <span class="panel-eyebrow" style="font-size: 0.6rem; color: var(--text-3); font-family: var(--mono); font-weight: 700;">COGNITIVE DECISION LOG</span>
+                <div style="font-family: var(--mono); font-size: 0.65rem; color: var(--text-2); background: rgba(0, 195, 255, 0.03); border: 1px solid var(--border-dim); padding: 10px; border-radius: 4px; display: flex; flex-direction: column; gap: 4px;" id="ai-rec-log">
+                  <div>[COGNITIVE] Telemetry checking loop online.</div>
+                  <div>[INTERLOCK] Signal 7B switched to Nominal Green.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- PANEL 1: DIGITAL TWIN -->
+      <section class="dash-view-panel" id="view-digital-twin">
+
+        <!-- Status Bar: Network | Trains | Alerts -->
+        <div class="cc-status-bar">
+          <div class="cc-stat">
+            <span class="cc-stat-lbl">NETWORK STATUS</span>
+            <span class="cc-stat-val text-green" id="cc-network-status">● NOMINAL</span>
+          </div>
+          <div class="cc-stat">
+            <span class="cc-stat-lbl">ACTIVE TRAINS</span>
+            <span class="cc-stat-val" id="cc-active-trains">7</span>
+          </div>
+          <div class="cc-stat">
+            <span class="cc-stat-lbl">OPEN ALERTS</span>
+            <span class="cc-stat-val text-green" id="cc-alert-count">0</span>
+          </div>
+          <div class="cc-stat">
+            <span class="cc-stat-lbl">SENSOR NODES</span>
+            <span class="cc-stat-val" id="cc-sensor-nodes">24/24</span>
+          </div>
+          <div class="cc-legend">
+            <span><i class="leg-dot green"></i> Safe</span>
+            <span><i class="leg-dot amber"></i> Warning</span>
+            <span><i class="leg-dot red"></i> Critical</span>
+          </div>
+        </div>
+
+        <!-- Predictive Timeline Strip -->
+        <div class="cc-predict-strip">
+          <span class="panel-eyebrow">PREDICTIVE TIMELINE</span>
+          <div class="predict-timeline-row">
+            <div class="pt-item">
+              <span class="pt-lbl">Today</span>
+              <span class="pt-val text-green" id="pt-today">15%</span>
+            </div>
+            <div class="pt-arrow">→</div>
+            <div class="pt-item">
+              <span class="pt-lbl">Tomorrow</span>
+              <span class="pt-val text-amber" id="pt-tomorrow">35%</span>
+            </div>
+            <div class="pt-arrow">→</div>
+            <div class="pt-item">
+              <span class="pt-lbl">Next 3 Days</span>
+              <span class="pt-val text-red" id="pt-3days">72%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-row grid-2-large">
+          
+          <!-- Map Section -->
+          <div class="card map-card">
+            <div class="card-header">
+              <h3 class="card-title">Live Railway Map</h3>
+              <span class="card-subtitle">Tracks · Trains · Sensors · Fault Zones — Secunderabad Division</span>
+            </div>
+            <div class="map-toolbar">
+              <span class="panel-eyebrow">CLICK SEGMENTS TO INSPECT · SIMULATE FAULTS</span>
+              <div class="map-toolbar-actions">
+                <button class="map-sim-btn" id="btn-sim-fault-segment" title="Inject fault on selected segment">⚡ SIMULATE FAULT</button>
+                <button class="map-sim-btn secondary" id="btn-clear-segment">CLEAR SELECTION</button>
+              </div>
+            </div>
+            <div class="map-container">
+              <!-- Interactive SVG Network Map -->
+              <svg class="rail-map-svg" viewBox="0 0 600 400" id="interactive-map">
+                <!-- Grid Lines background -->
+                <defs>
+                  <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+                
+                <!-- Rail tracks -->
+                <path d="M 50 200 L 150 200 L 250 150 L 350 150 L 450 220 L 550 220" class="map-rail-line track-bg" />
+                <path d="M 150 200 L 220 280 L 380 280 L 450 220" class="map-rail-line track-bg" />
+                
+                <!-- Live segments highlighting -->
+                <path d="M 50 200 L 150 200" id="seg-A" data-segment="Track Segment A" data-station="Secunderabad" class="map-rail-line segment nominal" />
+                <path d="M 150 200 L 250 150" id="seg-B" data-segment="Track Segment B" data-station="Vikarabad" class="map-rail-line segment nominal" />
+                <path d="M 250 150 L 350 150" id="seg-C" data-segment="Track Segment C" data-station="Vikarabad" class="map-rail-line segment nominal" />
+                <path d="M 350 150 L 450 220" id="seg-D" data-segment="Track Segment D" data-station="Kazipet" class="map-rail-line segment nominal" />
+                <path d="M 450 220 L 550 220" id="seg-E" data-segment="Track Segment E" data-station="Kazipet" class="map-rail-line segment nominal" />
+                <path d="M 150 200 L 220 280" id="seg-F" data-segment="Track Segment F" data-station="Bibinagar" class="map-rail-line segment nominal" />
+                <path d="M 220 280 L 380 280" id="seg-G" data-segment="Track Segment G" data-station="Warangal" class="map-rail-line segment nominal" />
+                <path d="M 380 280 L 450 220" id="seg-H" data-segment="Track Segment H" data-station="Warangal" class="map-rail-line segment nominal" />
+
+                <!-- Moving Train Dot -->
+                <circle cx="-20" cy="-20" r="5" id="map-train-dot" class="map-train-dot"></circle>
+
+                <!-- Station nodes -->
+                <g class="map-station" data-station="Secunderabad" data-segments="seg-A,seg-F" cx="150" cy="200">
+                  <circle cx="150" cy="200" r="7" class="station-dot active" />
+                  <text x="150" y="185" class="station-lbl">Secunderabad (Km 142)</text>
+                </g>
+                <g class="map-station" data-station="Vikarabad" data-segments="seg-B,seg-C" cx="250" cy="150">
+                  <circle cx="250" cy="150" r="7" class="station-dot" />
+                  <text x="250" y="135" class="station-lbl">Vikarabad (Km 88)</text>
+                </g>
+                <g class="map-station" data-station="Kazipet" data-segments="seg-D,seg-E" cx="450" cy="220">
+                  <circle cx="450" cy="220" r="7" class="station-dot" />
+                  <text x="450" y="205" class="station-lbl">Kazipet (Km 184)</text>
+                </g>
+                <g class="map-station" data-station="Warangal" data-segments="seg-G,seg-H" cx="380" cy="280">
+                  <circle cx="380" cy="280" r="7" class="station-dot" />
+                  <text x="380" y="300" class="station-lbl">Warangal (Km 201)</text>
+                </g>
+                <g class="map-station" data-station="Bibinagar" data-segments="seg-F,seg-G" cx="220" cy="280">
+                  <circle cx="220" cy="280" r="7" class="station-dot" />
+                  <text x="220" y="300" class="station-lbl">Bibinagar (Km 162)</text>
+                </g>
+              </svg>
+            </div>
+            <div class="map-info-hud">
+              <div class="hud-item"><span class="h-label">SELECTED SEGMENT:</span> <span id="map-active-segment" class="h-val">—</span></div>
+              <div class="hud-item"><span class="h-label">ACTIVE NODE:</span> <span id="map-active-node" class="h-val text-glow">Secunderabad Jn</span></div>
+              <div class="hud-item"><span class="h-label">TRACK TEMP:</span> <span id="map-track-temp" class="h-val">34.2°C</span></div>
+              <div class="hud-item"><span class="h-label">VIBE-VERT:</span> <span id="map-vibe-vert" class="h-val">1.02G</span></div>
+              <div class="hud-item"><span class="h-label">VIBE-LAT:</span> <span id="map-vibe-lat" class="h-val">0.05G</span></div>
+              <div class="hud-item"><span class="h-label">PREDICTED OUTCOME:</span> <span id="map-predicted-outcome" class="h-val text-green">NOMINAL</span></div>
+            </div>
+          </div>
+
+          <!-- 3D + Sensor Panel -->
+          <div class="cc-right-column">
+          <div class="card visualization-3d-card">
+            <div class="card-header">
+              <h3 class="card-title">Railway Digital Twin</h3>
+              <span class="card-subtitle">Three.js WebGL — orbit · zoom · pan · live sensor nodes &amp; train movement</span>
+            </div>
+            <div class="fault-sim-bar">
+              <span class="panel-eyebrow" style="width:100%;margin-bottom:4px;">FAULT SIMULATION</span>
+              <button class="fault-sim-btn" data-fault-quick="broken-rail">Track Crack</button>
+              <button class="fault-sim-btn" data-fault-quick="excessive-vibration">Excessive Vibration</button>
+              <button class="fault-sim-btn" data-fault-quick="track-buckling">Rail Misalignment</button>
+              <button class="fault-sim-btn" data-fault-quick="flooded-track">Flood Risk</button>
+            </div>
+            <div class="canvas-3d-wrapper">
+              <canvas id="track-3d-canvas" class="track-3d-canvas"></canvas>
+              <div class="hud-overlay-3d">
+                <div class="hud-overlay-line"><span class="o-lbl">RENDERER:</span> <span class="o-val" id="canvas-pers-mode">THREE.JS WEBGL</span></div>
+                <div class="hud-overlay-line"><span class="o-lbl">NODE LED:</span> <span class="o-val text-green" id="canvas-node-led">ACTIVE</span></div>
+                <div class="hud-overlay-line"><span class="o-lbl">TRAIN SPEED:</span> <span class="o-val" id="canvas-train-speed">110 km/h</span></div>
+                <div class="hud-overlay-line"><span class="o-lbl">STRESS HIGHLIGHT:</span> <span class="o-val text-green" id="canvas-stress-val">NOMINAL</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real-Time Sensor Monitoring -->
+          <div class="card sensor-monitor-card">
+            <div class="card-header border-bottom">
+              <h3 class="card-title">Real-Time Sensor Monitoring</h3>
+              <span class="card-subtitle">Live telemetry — updates every 3 seconds</span>
+            </div>
+            <div class="sensor-json-readout" id="sensor-json-readout">
+              <code id="sensor-json-text">{ "vibration": 1.02, "temperature": 34, "track_shift": 0.4, "humidity": 62, "wheel_impact": 0.05 }</code>
+            </div>
+            <div class="sensor-charts-grid">
+              <div class="sensor-chart-box">
+                <span class="sc-lbl">Vibration (G)</span>
+                <canvas id="chart-vibration" class="sensor-mini-chart"></canvas>
+                <span class="sc-val" id="val-vibration">1.02</span>
+              </div>
+              <div class="sensor-chart-box">
+                <span class="sc-lbl">Temperature (°C)</span>
+                <canvas id="chart-temperature" class="sensor-mini-chart"></canvas>
+                <span class="sc-val" id="val-temperature">34</span>
+              </div>
+              <div class="sensor-chart-box">
+                <span class="sc-lbl">Track Shift (mm)</span>
+                <canvas id="chart-shift" class="sensor-mini-chart"></canvas>
+                <span class="sc-val" id="val-shift">0.4</span>
+              </div>
+              <div class="sensor-chart-box">
+                <span class="sc-lbl">Wheel Impact (G)</span>
+                <canvas id="chart-wheel" class="sensor-mini-chart"></canvas>
+                <span class="sc-val" id="val-wheel">0.05</span>
+              </div>
+            </div>
+          </div>
+          </div><!-- /cc-right-column -->
+
+        </div>
+
+        <!-- AI Insights + Risk Equation -->
+        <div class="cc-split-row">
+          <div class="card cc-ai-insights-card">
+            <div class="card-header border-bottom">
+              <h3 class="card-title">AI Risk Engine</h3>
+              <span class="card-subtitle">Interpreted risk — not raw numbers</span>
+            </div>
+            <div class="risk-equation" id="risk-equation">
+              <div class="eq-line"><span class="eq-factor">Stable vibration baseline</span></div>
+              <div class="eq-line eq-plus">+</div>
+              <div class="eq-line"><span class="eq-factor">Nominal track displacement</span></div>
+              <div class="eq-line eq-plus">+</div>
+              <div class="eq-line"><span class="eq-factor">Weather within limits</span></div>
+              <div class="eq-line eq-equals">=</div>
+              <div class="eq-line eq-result text-green" id="eq-result">Low derailment risk</div>
+            </div>
+          </div>
+          <div class="card cc-maintenance-strip-card">
+            <div class="card-header border-bottom">
+              <h3 class="card-title">Maintenance Recommendations</h3>
+              <span class="card-subtitle">AI-generated work orders</span>
+            </div>
+            <div class="cc-maint-strip" id="cc-maint-strip">
+              <div class="maint-strip-row">
+                <span class="ms-lbl">Priority</span>
+                <span class="ms-val text-green" id="cc-ms-priority">Nominal</span>
+              </div>
+              <div class="maint-strip-row">
+                <span class="ms-lbl">Location</span>
+                <span class="ms-val" id="cc-ms-location">—</span>
+              </div>
+              <div class="maint-strip-row">
+                <span class="ms-lbl">Team Required</span>
+                <span class="ms-val" id="cc-ms-team">—</span>
+              </div>
+              <div class="maint-strip-row">
+                <span class="ms-lbl">Est. Repair</span>
+                <span class="ms-val" id="cc-ms-time">—</span>
+              </div>
+              <div class="maint-strip-row">
+                <span class="ms-lbl">Equipment</span>
+                <span class="ms-val" id="cc-ms-equipment">Routine inspection tools</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fault Replay Timeline (live idle state) -->
+        <div class="card cc-replay-card">
+          <div class="card-header border-bottom">
+            <h3 class="card-title">Fault Replay Timeline</h3>
+            <span class="card-subtitle">Black-box sequence — scrub through anomaly development</span>
+          </div>
+          <div class="fault-replay-timeline" id="fault-replay-timeline">
+            <div class="frt-item active"><span class="frt-time">14:05</span><span class="frt-event">Normal — all baselines stable</span></div>
+            <div class="frt-item"><span class="frt-time">—</span><span class="frt-event">Awaiting anomaly or run simulation</span></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- PANEL 2: FUTURE VIEW MODE (Predictive Analytics) -->
+      <section class="dash-view-panel" id="view-future-view">
+        <div class="card future-view-card">
+          <div class="card-header border-bottom">
+            <div class="flex-between">
+              <div>
+                <h3 class="card-title">"Future View" Analytics Engine</h3>
+                <span class="card-subtitle">AI-modeled risk predictions based on edge vibration wear indexes &amp; weather stress cycles</span>
+              </div>
+              <div class="future-toggle-container">
+                <button class="future-toggle-btn active" data-mode="current">CURRENT STATE</button>
+                <button class="future-toggle-btn" data-mode="24h">24-HOUR PREDICTION</button>
+                <button class="future-toggle-btn" data-mode="7d">7-DAY PREDICTION</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="future-content">
+            <div class="grid grid-2">
+              <div class="predictive-stats-card">
+                <span class="panel-eyebrow">PREDICTIVE HEALTH INDEX</span>
+                <div class="forecast-gauge-row">
+                  <div class="forecast-big-card">
+                    <span class="f-lbl" id="future-main-lbl">Current State</span>
+                    <span class="f-num text-green" id="future-probability">NORMAL</span>
+                    <span class="f-desc" id="future-status-desc">Grid fully functional. Failure probability: 0.05%. Base thermal stability.</span>
+                  </div>
+                  <div class="forecast-small-stats">
+                    <div class="f-small-item">
+                      <span class="f-s-lbl">Settlement Risk</span>
+                      <span class="f-s-val text-green" id="future-settle">2.4%</span>
+                    </div>
+                    <div class="f-small-item">
+                      <span class="f-s-lbl">Joint Separation Risk</span>
+                      <span class="f-s-val text-green" id="future-separation">1.1%</span>
+                    </div>
+                    <div class="f-small-item">
+                      <span class="f-s-lbl">Buckling Factor</span>
+                      <span class="f-s-val text-green" id="future-buckle">0.3%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="recommendation-box">
+                  <span class="rec-title">MAINTENANCE SCHEDULING ADVISORY</span>
+                  <p class="rec-body" id="future-advisory">
+                    No immediate safety interventions required. Continue routine inspections on next maintenance schedule.
+                  </p>
+                </div>
+              </div>
+
+              <div class="telemetry-chart-card">
+                <span class="panel-eyebrow">TELEMETRY PREDICTION CHART</span>
+                <div class="chart-canvas-container">
+                  <canvas id="prediction-chart-canvas"></canvas>
+                </div>
+                <div class="chart-legend">
+                  <span><span class="dot-legend nominal"></span> Baseline Vibration Amplitude</span>
+                  <span><span class="dot-legend risk"></span> Projected Degradation Curve</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANEL 3: INCIDENT CONSOLE (Simulator and replay) -->
+      <section class="dash-view-panel" id="view-incident-simulator">
+        <div class="card simulator-card">
+          <div class="card-header border-bottom">
+            <h3 class="card-title">Incident Management Console</h3>
+            <span class="card-subtitle">Timeline replay · fault injection · emergency decision loop</span>
+          </div>
+          <div class="incident-split-layout">
+            <div class="incident-timeline-panel">
+              <span class="panel-eyebrow">INCIDENT TIMELINE</span>
+              <div class="incident-timeline" id="incident-timeline">
+                <div class="it-item normal" style="animation-delay:0ms"><span class="it-time">12:00</span><span class="it-event">System Normal — all baselines stable</span></div>
+                <div class="it-item" style="animation-delay:80ms"><span class="it-time">—</span><span class="it-event">Awaiting fault injection or simulation</span></div>
+              </div>
+            </div>
+            <div class="incident-detail-panel">
+          <div class="simulator-layout">
+            <div class="simulator-controls">
+              
+              <!-- Incident Injector buttons (Emergency Decision Simulator) -->
+              <div class="injector-section">
+                <span class="panel-eyebrow">1. INJECT FAULT IN SCENARIO</span>
+                <div class="injector-buttons">
+                  <button class="inject-btn" data-fault="broken-rail">
+                    <span class="i-icon">⚡</span>
+                    <span class="i-name">Broken Rail / Fracture</span>
+                  </button>
+                  <button class="inject-btn" data-fault="wheel-crack">
+                    <span class="i-icon">⚙️</span>
+                    <span class="i-name">Wheel Flat / Anomaly</span>
+                  </button>
+                  <button class="inject-btn" data-fault="flooded-track">
+                    <span class="i-icon">🌧️</span>
+                    <span class="i-name">Flooded Track / Rain</span>
+                  </button>
+                  <button class="inject-btn" data-fault="track-buckling">
+                    <span class="i-icon">🔥</span>
+                    <span class="i-name">Thermal Buckling</span>
+                  </button>
+                  <button class="inject-btn" data-fault="excessive-vibration">
+                    <span class="i-icon">📳</span>
+                    <span class="i-name">Excessive Vibration</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="sim-parameters-row">
+                <div class="form-group">
+                  <label for="sim-active-station">Simulation Station</label>
+                  <select id="sim-active-station" class="form-control">
+                    <option value="Secunderabad">Secunderabad Jn (Km 142.4)</option>
+                    <option value="Vikarabad">Vikarabad Jn (Km 88.1)</option>
+                    <option value="Kazipet">Kazipet Jn (Km 184.2)</option>
+                    <option value="Warangal">Warangal Jn (Km 201.7)</option>
+                    <option value="Bibinagar">Bibinagar Jn (Km 162.0)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="sim-approaching-train">Approaching Train</label>
+                  <select id="sim-approaching-train" class="form-control">
+                    <option value="12621" data-speed="110" data-name="Tamil Nadu Express">12621 Tamil Nadu Express (110 km/h)</option>
+                    <option value="12727" data-speed="125" data-name="AP Express">12727 Andhra Pradesh Express (125 km/h)</option>
+                    <option value="11020" data-speed="90"  data-name="Konark Express">11020 Konark Express (90 km/h)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="trigger-row">
+                <button class="btn btn-primary" id="btn-run-emergency-sim">LAUNCH INTERVENTION LOOP</button>
+                <button class="btn btn-secondary" id="btn-reset-sim" disabled>RESET SYSTEMS</button>
+              </div>
+
+              <!-- Real-Time Fault Replay -->
+              <div class="replay-section">
+                <span class="panel-eyebrow">2. REAL-TIME FAULT REPLAY (BLACK BOX)</span>
+                <div class="replay-controls">
+                  <button class="replay-play-btn" id="btn-replay-play-pause">
+                    <span id="play-pause-icon">&#9658;</span> PLAY REPLAY
+                  </button>
+                  <div class="slider-wrapper">
+                    <input type="range" id="replay-timeline-slider" min="0" max="100" value="100" disabled />
+                    <div class="timeline-ticks">
+                      <span>T-10s</span>
+                      <span>T-5s</span>
+                      <span>ALERT (T-2s)</span>
+                      <span>HALTED</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Dashboard Telemetry Readout -->
+            <div class="simulator-display">
+              <div class="card-header border-bottom">
+                <span class="panel-eyebrow">EDGE TELEMETRY FEED (100Hz)</span>
+              </div>
+              <div class="sim-log-output-container">
+                <pre class="sim-telemetry-log" id="dashboard-telemetry-log">
+[SYSTEM] Secure telemetry gateway online
+[SYSTEM] LoRa mesh synchronized: 24 edge nodes connected
+[Node-SEC] BATT: 3.92V SOLAR: 1.4W RAIL-TEMP: 34.2C
+[Node-SEC] FFT Analysis: baselines stable
+[SYSTEM] Awaiting fault injection parameters...</pre>
+              </div>
+              
+              <div class="sim-display-stats">
+                <div class="display-stat-box">
+                  <span class="d-lbl">TRAIN SPEED</span>
+                  <span class="d-val" id="hud-train-speed">—</span>
+                </div>
+                <div class="display-stat-box">
+                  <span class="d-lbl">TTI</span>
+                  <span class="d-val text-glow" id="hud-tti">—</span>
+                </div>
+                <div class="display-stat-box">
+                  <span class="d-lbl">SIGNAL INDICATOR</span>
+                  <span class="d-val text-green" id="hud-signal">GREEN</span>
+                </div>
+              </div>
+            </div>
+          </div>
+            </div><!-- /incident-detail-panel -->
+          </div><!-- /incident-split-layout -->
+        </div>
+      </section>
+
+      <!-- PANEL 4: AI AGENTS -->
+      <section class="dash-view-panel" id="view-ai-copilot">
+        <div class="card">
+          <div class="card-header border-bottom">
+            <h3 class="card-title">Multi-Agent Safety Council</h3>
+            <span class="card-subtitle">Live AI agent discussion — correlating track, weather, maintenance &amp; safety signals</span>
+          </div>
+          <div class="ai-agents-grid" id="ai-agents-live-grid">
+            <div class="ai-agent-card track"><div class="agent-name">Track Agent</div><div class="agent-msg" id="agent-msg-track">Monitoring vibration baselines across all sectors.</div></div>
+            <div class="ai-agent-card weather"><div class="agent-name">Weather Agent</div><div class="agent-msg" id="agent-msg-weather">Rainfall correlation stable. No settlement acceleration.</div></div>
+            <div class="ai-agent-card maint"><div class="agent-name">Maintenance Agent</div><div class="agent-msg" id="agent-msg-maint">Next scheduled inspection in 48 hours.</div></div>
+            <div class="ai-agent-card safety"><div class="agent-name">Safety Agent</div><div class="agent-msg" id="agent-msg-safety">Collision risk remains low. All signals green.</div></div>
+            <div class="ai-agent-card decision" style="grid-column:1/-1"><div class="agent-name">Decision Agent</div><div class="agent-msg" id="agent-msg-decision">Consensus: maintain green signal. Autonomous override armed.</div></div>
+          </div>
+        </div>
+
+        <div class="panel-row grid-2-large">
+          
+          <!-- AI Investigation Agent -->
+          <div class="card chat-card">
+            <div class="card-header">
+              <h3 class="card-title">AI Investigation Chat</h3>
+              <span class="card-subtitle">Ask RailGuard AI about telemetry spikes &amp; risk diagnostics</span>
+            </div>
+            
+            <div class="chat-container">
+              <div class="chat-history" id="ai-chat-history">
+                <div class="chat-bubble bot">
+                  Hello! I am the RailGuard AI safety analyst. I continuously correlate track telemetry, weather anomalies, and train vibration histories. How can I assist you with safety diagnostics today?
+                </div>
+              </div>
+              
+              <!-- Autocomplete suggestions -->
+              <div class="chat-suggestions">
+                <button class="chat-sug-btn">Why is Track Segment B red?</button>
+                <button class="chat-sug-btn">What is causing the vibration spike on TN 12621?</button>
+                <button class="chat-sug-btn">Generate safety report for SCR Zone</button>
+              </div>
+              
+              <form class="chat-input-form" id="ai-chat-form">
+                <input type="text" id="chat-input-field" class="form-control" placeholder="Ask RailGuard AI..." autocomplete="off" />
+                <button type="submit" class="btn btn-primary btn-chat-send">SEND</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Maintenance Copilot -->
+          <div class="card maintenance-copilot-card">
+            <div class="card-header border-bottom">
+              <h3 class="card-title">Maintenance Copilot</h3>
+              <span class="card-subtitle">AI-generated checklist and logistics coordination dispatch advisory</span>
+            </div>
+            <div class="maintenance-content">
+              <div class="maintenance-meta-row">
+                <div class="meta-item">
+                  <span class="m-lbl">PRIORITY LEVEL</span>
+                  <span class="m-val text-green" id="m-copilot-priority">NOMINAL</span>
+                </div>
+                <div class="meta-item">
+                  <span class="m-lbl">TEAM REQUIRED</span>
+                  <span class="m-val" id="m-copilot-team">—</span>
+                </div>
+                <div class="meta-item">
+                  <span class="m-lbl">EST. REPAIR TIME</span>
+                  <span class="m-val" id="m-copilot-time">—</span>
+                </div>
+              </div>
+
+              <div class="checklist-section">
+                <span class="panel-eyebrow">INSPECTION CHECKLIST (GENERATED BY AI)</span>
+                <ul class="checklist-items" id="m-copilot-checklist">
+                  <li class="checklist-empty">No active faults. Maintenance checklist will be generated once an anomaly is detected.</li>
+                </ul>
+              </div>
+
+              <div class="recommended-tools-section">
+                <span class="panel-eyebrow">RECOMMENDED SAFETY &amp; REPAIR TOOLS</span>
+                <div class="tools-badges-container" id="m-copilot-tools">
+                  <span class="tool-badge-empty">None</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- RIGHT SIDEBAR: MULTI-AGENT DISCUSSION FEED -->
+    <aside class="dashboard-right-sidebar">
+      <!-- Train ETA Card -->
+      <div class="eta-card" id="eta-card">
+        <div class="eta-card-header">
+          <span class="eta-train-num">Train 12621</span>
+          <span class="eta-status" id="eta-status">EN ROUTE</span>
+        </div>
+        <div class="eta-grid">
+          <div class="eta-item">
+            <span class="eta-lbl">Distance Remaining</span>
+            <span class="eta-val" id="eta-distance">42.4 km</span>
+          </div>
+          <div class="eta-item">
+            <span class="eta-lbl">Current Speed</span>
+            <span class="eta-val" id="eta-speed">110 km/h</span>
+          </div>
+          <div class="eta-countdown">
+            <span class="eta-lbl">ETA Countdown</span>
+            <div class="eta-countdown-val" id="eta-countdown">00:23:08</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-header">
+        <span class="hud-title"><span class="hud-dot orange"></span> AGENT CONSENSUS LOG</span>
+        <span class="sidebar-desc">Real-Time Multi-Agent Feed</span>
+      </div>
+      
+      <div class="multi-agent-history" id="multi-agent-discussion-feed">
+        <div class="agent-empty-state">
+          No incident active. Launch a simulation to view the agents discuss, correlate telemetry, and vote on safety interventions.
+        </div>
+      </div>
+
+      <div class="agents-roster">
+        <span class="panel-eyebrow">SAFETY COMMITTEE MEMBERS</span>
+        <div class="roster-grid">
+          <div class="roster-item" id="roster-track"><span class="r-dot active"></span> Track Agent</div>
+          <div class="roster-item" id="roster-weather"><span class="r-dot active"></span> Weather Agent</div>
+          <div class="roster-item" id="roster-maintenance"><span class="r-dot active"></span> Maint Agent</div>
+          <div class="roster-item" id="roster-safety"><span class="r-dot active"></span> Safety Agent</div>
+          <div class="roster-item" id="roster-decision"><span class="r-dot active"></span> Decision Agent</div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <script type="module" src="/js/dashboard.js"></script>
+</body>
+</html>

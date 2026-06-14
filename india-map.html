@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RailGuard AI | India Geospatial Network Map</title>
+  <meta name="description" content="RailGuard AI Geospatial Network Map - Real-time South Central Railway corridor tracking and fault mapping." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .map-page-body {
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    .map-dashboard-container {
+      margin-top: 80px;
+      flex: 1;
+      padding: 30px;
+      max-width: 1300px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 30px;
+    }
+    .geospatial-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+    .svg-map-wrapper {
+      background: var(--bg2);
+      border: 1px solid var(--border-dim);
+      border-radius: 8px;
+      flex: 1;
+      min-height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .glowing-route {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 4;
+      transition: stroke 0.6s ease, stroke-width 0.3s ease, filter 0.6s ease;
+    }
+    .route-nominal {
+      stroke: var(--green);
+      filter: drop-shadow(0 0 6px var(--green-glow));
+    }
+    .route-warning {
+      stroke: var(--amber);
+      filter: drop-shadow(0 0 8px var(--amber-glow));
+      stroke-width: 5;
+    }
+    .route-critical {
+      stroke: var(--red);
+      filter: drop-shadow(0 0 12px var(--red-glow));
+      stroke-width: 6;
+      animation: route-flash 1s infinite alternate;
+    }
+    @keyframes route-flash {
+      from { opacity: 0.7; }
+      to { opacity: 1; }
+    }
+    .map-node {
+      cursor: pointer;
+    }
+    .map-node circle {
+      fill: var(--bg2);
+      stroke: var(--text-2);
+      stroke-width: 3;
+      transition: all 0.3s ease;
+    }
+    .map-node:hover circle, .map-node.active circle {
+      stroke: var(--cyan);
+      fill: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+    .map-node.faulty circle {
+      stroke: var(--red);
+      fill: var(--red);
+      animation: beacon-ping 1.5s infinite;
+    }
+    @keyframes beacon-ping {
+      0% { r: 7; opacity: 1; }
+      50% { r: 11; opacity: 0.8; }
+      100% { r: 7; opacity: 1; }
+    }
+    .node-label {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      fill: var(--text-2);
+      text-anchor: middle;
+      transition: fill 0.3s ease;
+    }
+    .map-node:hover .node-label, .map-node.active .node-label {
+      fill: var(--text);
+    }
+    .map-node.faulty .node-label {
+      fill: var(--red);
+      text-shadow: 0 0 5px var(--red-glow);
+    }
+    .control-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .sim-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .hud-title {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .btn-inject-map {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-family: var(--font);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.3s ease;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-inject-map:hover {
+      background: var(--orange-dim);
+      border-color: var(--orange);
+      color: var(--text);
+      transform: translateX(3px);
+    }
+    .btn-inject-map.active {
+      background: var(--orange-dim);
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+    .readout-line {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      margin-bottom: 8px;
+    }
+    .readout-line:last-child { margin-bottom: 0; }
+    .readout-lbl { color: var(--text-3); }
+    .readout-val { color: var(--text-2); font-weight: 700; }
+    
+    .map-beacon-overlay {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(4, 4, 6, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body class="map-page-body">
+
+  <div class="ambient-glow"></div>
+
+  <!-- ============ HEADER ============ -->
+  <header class="main-header" id="main-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <span class="logo-accent">RAIL</span>GUARD<span class="logo-dot">.AI</span>
+      </a>
+      <nav class="nav-links" id="nav-links">
+        <a href="/" class="nav-link"><span class="nav-num">01/</span> LANDING</a>
+        <a href="/dashboard.html" class="nav-link"><span class="nav-num">02/</span> COMMAND CENTER</a>
+        <a href="/dashboard.html?tab=twin" class="nav-link"><span class="nav-num">03/</span> DIGITAL TWIN</a>
+        <a href="/ai.html" class="nav-link"><span class="nav-num">04/</span> AI COPILOT</a>
+        <a href="/india-map.html" class="nav-link active nav-highlight"><span class="nav-num">05/</span> INDIA MAP</a>
+      </nav>
+      <div class="system-status">
+        <span class="status-indicator" id="global-status-dot"></span>
+        <span class="status-text" id="global-status-text">COGNITIVE NOMINAL</span>
+      </div>
+      <!-- Theme Switcher Toggle -->
+      <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme" style="background: none; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 50px; font-family: var(--mono); font-size: 0.68rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--t-fast);">
+        <span id="theme-toggle-icon">☀</span> <span id="theme-toggle-text">LIGHT</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <div class="map-dashboard-container">
+    
+    <!-- Left panel: Glowing SVG Network Map -->
+    <div class="geospatial-card">
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 1.25rem; font-weight: 800; text-transform: uppercase;">South Central Railway Geospatial Grid</h2>
+        <p style="font-size: 0.78rem; color: var(--text-2); margin-top: 4px;">Dynamic pathing and failure mapping of active express sectors.</p>
+      </div>
+      
+      <div class="svg-map-wrapper">
+        <svg viewBox="0 0 600 500" style="width: 100%; height: auto;" id="india-svg-map">
+          <!-- Dark Tech Grid lines -->
+          <defs>
+            <pattern id="grid-lines" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(201,106,61,0.03)" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid-lines)" />
+
+          <!-- Connected Glowing railway paths -->
+          <!-- Hyderabad to Secunderabad -->
+          <path d="M 120 380 Q 140 370 170 340" id="route-hyd-sec" class="glowing-route route-nominal" />
+          
+          <!-- Secunderabad to Kazipet -->
+          <path d="M 170 340 Q 230 260 310 210" id="route-sec-kzp" class="glowing-route route-nominal" />
+          
+          <!-- Kazipet to Warangal -->
+          <path d="M 310 210 L 370 230" id="route-kzp-wgl" class="glowing-route route-nominal" />
+          
+          <!-- Warangal to Vijayawada -->
+          <path d="M 370 230 Q 450 320 490 390" id="route-wgl-vjw" class="glowing-route route-nominal" />
+
+          <!-- Station Nodes -->
+          <!-- Hyderabad -->
+          <g class="map-node" id="node-hyd" onclick="clickNode('Hyderabad', 'HYD-01')">
+            <circle cx="120" cy="380" r="7" />
+            <text x="120" y="402" class="node-label">Hyderabad (HYD)</text>
+          </g>
+          
+          <!-- Secunderabad -->
+          <g class="map-node active" id="node-sec" onclick="clickNode('Secunderabad', 'SC-07')">
+            <circle cx="170" cy="340" r="7" />
+            <text x="145" y="322" class="node-label">Secunderabad (SC)</text>
+          </g>
+
+          <!-- Kazipet -->
+          <g class="map-node" id="node-kzp" onclick="clickNode('Kazipet', 'KZP-03')">
+            <circle cx="310" cy="210" r="7" />
+            <text x="310" y="190" class="node-label">Kazipet (KZP)</text>
+          </g>
+
+          <!-- Warangal -->
+          <g class="map-node" id="node-wgl" onclick="clickNode('Warangal', 'WGL-09')">
+            <circle cx="370" cy="230" r="7" />
+            <text x="390" y="250" class="node-label">Warangal (WGL)</text>
+          </g>
+
+          <!-- Vijayawada -->
+          <g class="map-node" id="node-vjw" onclick="clickNode('Vijayawada', 'BZA-12')">
+            <circle cx="490" cy="390" r="7" />
+            <text x="490" y="415" class="node-label">Vijayawada (BZA)</text>
+          </g>
+        </svg>
+
+        <div class="map-beacon-overlay">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block;" id="map-beacon-status"></span>
+            <span id="map-beacon-text" style="font-weight: 700; color: var(--green);">NOMINAL GATEWAY</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right sidebar: Control panel and readout -->
+    <div class="control-sidebar">
+      
+      <!-- Fault injection card -->
+      <div class="sim-card">
+        <span class="hud-title">COGNITIVE INTERVENTION CONSOLE</span>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button class="btn-inject-map" id="btn-sec-kzp" onclick="triggerMapFault('sec-kzp', 'route-sec-kzp', 'node-kzp')">
+            <span>Secunderabad ➔ Kazipet</span>
+            <span>⚡ INJECT</span>
+          </button>
+          <button class="btn-inject-map" id="btn-kzp-wgl" onclick="triggerMapFault('kzp-wgl', 'route-kzp-wgl', 'node-wgl')">
+            <span>Kazipet ➔ Warangal</span>
+            <span>⚡ INJECT</span>
+          </button>
+          <button class="btn-inject-map" id="btn-wgl-vjw" onclick="triggerMapFault('wgl-vjw', 'route-wgl-vjw', 'node-vjw')">
+            <span>Warangal ➔ Vijayawada</span>
+            <span>⚡ INJECT</span>
+          </button>
+          <button onclick="resetMapSimulation()" style="width: 100%; background: transparent; border: 1px dashed var(--border); color: var(--text-2); padding: 10px; border-radius: 6px; font-family: var(--mono); font-size: 0.72rem; cursor: pointer; transition: 0.2s; margin-top: 10px;">
+            ♻ RESET MAP ROUTING
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Readout card -->
+      <div class="sim-card">
+        <span class="hud-title">GRID TELEMETRY READOUT</span>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="readout-line"><span class="readout-lbl">Selected Node:</span> <span class="readout-val" id="readout-node">Secunderabad Junction</span></div>
+          <div class="readout-line"><span class="readout-lbl">Identifier:</span> <span class="readout-val" id="readout-id">SC-07</span></div>
+          <div class="readout-line"><span class="readout-lbl">Vibe baseline:</span> <span class="readout-val">1.02 G (Nominal)</span></div>
+          <div class="readout-line"><span class="readout-lbl">Grid status:</span> <span class="readout-val text-green" id="readout-status">● NOMINAL</span></div>
+          <div class="readout-line"><span class="readout-lbl">Derailment risk:</span> <span class="readout-val text-green" id="readout-risk">2%</span></div>
+        </div>
+      </div>
+
+      <!-- Operations advice -->
+      <div class="sim-card" style="border-left: 3px solid var(--green);" id="map-directive-card">
+        <span class="hud-title" style="color: var(--green);" id="map-directive-title">OPERATIONS DIRECTIVE</span>
+        <p style="font-family: var(--mono); font-size: 0.7rem; line-height: 1.5; color: var(--text-2); margin: 0;" id="map-directive-text">
+          All routes nominal. Signal interlocks verified. Autonomy Level 5 armed on Secunderabad–Vijayawada corridor sections.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Theme Switcher implementation
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeToggleIcon = document.getElementById('theme-toggle-icon');
+    const themeToggleText = document.getElementById('theme-toggle-text');
+
+    const savedTheme = localStorage.getItem('railguard-theme') || 'dark';
+    document.documentElement.className = `theme-${savedTheme}`;
+    updateThemeUI(savedTheme);
+
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.classList.contains('theme-light') ? 'light' : 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.className = `theme-${newTheme}`;
+        localStorage.setItem('railguard-theme', newTheme);
+        updateThemeUI(newTheme);
+      });
+    }
+
+    function updateThemeUI(theme) {
+      if (themeToggleIcon && themeToggleText) {
+        if (theme === 'light') {
+          themeToggleIcon.textContent = '🌙';
+          themeToggleText.textContent = 'DARK';
+        } else {
+          themeToggleIcon.textContent = '☀';
+          themeToggleText.textContent = 'LIGHT';
+        }
+      }
+    }
+
+    // Active Map simulation states
+    let activeFaultRouteId = null;
+    let activeFaultNodeId = null;
+    let simTimer = null;
+
+    function clickNode(name, id) {
+      document.querySelectorAll('.map-node').forEach(n => n.classList.remove('active'));
+      const activeNodeEl = document.getElementById('node-' + id.split('-')[0].toLowerCase());
+      if (activeNodeEl) activeNodeEl.classList.add('active');
+
+      document.getElementById('readout-node').textContent = name + " Junction";
+      document.getElementById('readout-id').textContent = id;
+      
+      const isNodeFaulty = activeNodeEl && activeNodeEl.classList.contains('faulty');
+      const readoutRisk = document.getElementById('readout-risk');
+      const readoutStatus = document.getElementById('readout-status');
+
+      if (isNodeFaulty) {
+        readoutRisk.textContent = "98%";
+        readoutRisk.className = "readout-val text-red";
+        readoutStatus.textContent = "● CRITICAL RISK";
+        readoutStatus.className = "readout-val text-red";
+      } else {
+        readoutRisk.textContent = "2%";
+        readoutRisk.className = "readout-val text-green";
+        readoutStatus.textContent = "● NOMINAL";
+        readoutStatus.className = "readout-val text-green";
+      }
+    }
+
+    function triggerMapFault(sectorKey, pathId, nodeId) {
+      resetMapSimulation();
+      
+      activeFaultRouteId = pathId;
+      activeFaultNodeId = nodeId;
+
+      const routeEl = document.getElementById(pathId);
+      const nodeEl = document.getElementById(nodeId);
+      
+      const btn = document.getElementById('btn-' + sectorKey);
+      if (btn) btn.classList.add('active');
+
+      // Stage 1: Yellow Warning route & telemetry (immediate)
+      routeEl.className = "glowing-route route-warning";
+      
+      document.getElementById('map-beacon-status').style.background = 'var(--amber)';
+      document.getElementById('map-beacon-text').textContent = 'ANOMALY ALERTED';
+      document.getElementById('map-beacon-text').style.color = 'var(--amber)';
+      
+      document.getElementById('map-directive-card').style.borderLeftColor = 'var(--amber)';
+      document.getElementById('map-directive-title').textContent = 'SPEED ENVELOPE DAMPENING';
+      document.getElementById('map-directive-title').style.color = 'var(--amber)';
+      document.getElementById('map-directive-text').textContent = `Vibration anomalies detected on sector ${sectorKey.toUpperCase()}. Restricting corridor speed to 40 km/h. Edge nodes computing TinyML classifications.`;
+
+      // Stage 2: Red Critical / Emergency Halt override after 2 seconds
+      simTimer = setTimeout(() => {
+        routeEl.className = "glowing-route route-critical";
+        if (nodeEl) nodeEl.classList.add('faulty');
+
+        document.getElementById('map-beacon-status').style.background = 'var(--red)';
+        document.getElementById('map-beacon-text').textContent = 'EMERGENCY RED SIGNAL';
+        document.getElementById('map-beacon-text').style.color = 'var(--red)';
+
+        document.getElementById('global-status-dot').className = 'status-indicator alert';
+        document.getElementById('global-status-text').textContent = 'EMERGENCY RED';
+
+        document.getElementById('map-directive-card').style.borderLeftColor = 'var(--red)';
+        document.getElementById('map-directive-title').textContent = 'AUTONOMOUS HALT TRIGGER';
+        document.getElementById('map-directive-title').style.color = 'var(--red)';
+        document.getElementById('map-directive-text').textContent = `CRITICAL: Broken rail fracture classified at sector ${sectorKey.toUpperCase()}. Interlocking overridden. Safe halt dispatch transmitted. Avoided collision.`;
+
+        // Update Readout if selected
+        const currentNodeIdName = document.getElementById('readout-id').textContent;
+        if (nodeId.includes(currentNodeIdName.split('-')[0].toLowerCase())) {
+          document.getElementById('readout-risk').textContent = "98%";
+          document.getElementById('readout-risk').className = "readout-val text-red";
+          document.getElementById('readout-status').textContent = "● CRITICAL RISK";
+          document.getElementById('readout-status').className = "readout-val text-red";
+        }
+      }, 2000);
+    }
+
+    function resetMapSimulation() {
+      clearTimeout(simTimer);
+      
+      document.querySelectorAll('.glowing-route').forEach(route => {
+        route.className = "glowing-route route-nominal";
+      });
+      document.querySelectorAll('.map-node').forEach(node => {
+        node.classList.remove('faulty');
+      });
+      document.querySelectorAll('.btn-inject-map').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      document.getElementById('map-beacon-status').style.background = 'var(--green)';
+      document.getElementById('map-beacon-text').textContent = 'NOMINAL GATEWAY';
+      document.getElementById('map-beacon-text').style.color = 'var(--green)';
+
+      document.getElementById('global-status-dot').className = 'status-indicator';
+      document.getElementById('global-status-text').textContent = 'COGNITIVE NOMINAL';
+
+      document.getElementById('map-directive-card').style.borderLeftColor = 'var(--green)';
+      document.getElementById('map-directive-title').textContent = 'OPERATIONS DIRECTIVE';
+      document.getElementById('map-directive-title').style.color = 'var(--green)';
+      document.getElementById('map-directive-text').textContent = "All routes nominal. Signal interlocks verified. Autonomy Level 5 armed on Secunderabad–Vijayawada corridor sections.";
+
+      // Reset readout values
+      const currentId = document.getElementById('readout-id').textContent;
+      clickNode(document.getElementById('readout-node').textContent.split(" ")[0], currentId);
+    }
+  </script>
+</body>
+</html>
