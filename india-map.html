@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/styles.css" />
   <style>
     .map-page-body {
       background: var(--bg);
@@ -89,7 +89,6 @@
     .map-node:hover circle, .map-node.active circle {
       stroke: var(--cyan);
       fill: var(--cyan);
-      box-shadow: 0 0 10px var(--cyan-glow);
     }
     .map-node.faulty circle {
       stroke: var(--red);
@@ -114,8 +113,26 @@
     }
     .map-node.faulty .node-label {
       fill: var(--red);
-      text-shadow: 0 0 5px var(--red-glow);
     }
+
+    /* Dynamic (searched) station markers */
+    .dynamic-marker circle {
+      stroke-width: 2;
+      fill-opacity: 0.85;
+      animation: dyn-pulse 1.6s ease-in-out infinite;
+    }
+    .dynamic-marker.dynamic-safe circle    { stroke: var(--green); fill: var(--green); }
+    .dynamic-marker.dynamic-warning circle { stroke: var(--amber); fill: var(--amber); }
+    .dynamic-marker.dynamic-critical circle{ stroke: var(--red);   fill: var(--red); }
+    .dynamic-label {
+      fill: var(--text) !important;
+      font-weight: 800;
+    }
+    @keyframes dyn-pulse {
+      0%, 100% { r: 8; opacity: 1; }
+      50%      { r: 12; opacity: 0.6; }
+    }
+
     .control-sidebar {
       display: flex;
       flex-direction: column;
@@ -176,7 +193,7 @@
     .readout-line:last-child { margin-bottom: 0; }
     .readout-lbl { color: var(--text-3); }
     .readout-val { color: var(--text-2); font-weight: 700; }
-    
+
     .map-beacon-overlay {
       position: absolute;
       top: 15px;
@@ -192,6 +209,110 @@
       flex-direction: column;
       gap: 4px;
     }
+
+    /* Station lookup panel */
+    .station-lookup-panel form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .station-lookup-panel input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.82rem;
+    }
+    .station-lookup-panel input:focus {
+      outline: none;
+      border-color: var(--orange);
+    }
+    .station-lookup-panel button {
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--orange-dim);
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .station-lookup-panel button:hover {
+      background: var(--orange);
+      color: #fff;
+    }
+    .station-lookup-panel button[data-action="clear"] {
+      background: transparent;
+      color: var(--text-3);
+    }
+    .station-card {
+      padding: 14px;
+      border-radius: 8px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+    }
+    .station-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .station-card-header h4 {
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+    .status-badge {
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .status-safe .status-badge     { background: var(--green-dim); color: var(--green); }
+    .status-warning .status-badge  { background: rgba(255,184,0,0.12); color: var(--amber); }
+    .status-critical .status-badge { background: var(--red-dim); color: var(--red); }
+    .station-meta {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-3);
+      margin: 6px 0;
+    }
+    .risk-score {
+      font-size: 0.8rem;
+      color: var(--text-2);
+      margin-bottom: 10px;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .metric {
+      display: flex;
+      flex-direction: column;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--text-3);
+    }
+    .metric strong {
+      font-size: 0.78rem;
+      color: var(--text);
+      margin-top: 2px;
+    }
+    .timestamp {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--text-3);
+    }
+    .loading { font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
+    .error { font-family: var(--mono); font-size: 0.75rem; color: var(--red); }
   </style>
 </head>
 <body class="map-page-body">
@@ -215,7 +336,6 @@
         <span class="status-indicator" id="global-status-dot"></span>
         <span class="status-text" id="global-status-text">COGNITIVE NOMINAL</span>
       </div>
-      <!-- Theme Switcher Toggle -->
       <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle Theme" style="background: none; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 50px; font-family: var(--mono); font-size: 0.68rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--t-fast);">
         <span id="theme-toggle-icon">☀</span> <span id="theme-toggle-text">LIGHT</span>
       </button>
@@ -224,17 +344,16 @@
 
   <!-- ============ MAIN CONTENT ============ -->
   <div class="map-dashboard-container">
-    
+
     <!-- Left panel: Glowing SVG Network Map -->
     <div class="geospatial-card">
       <div style="margin-bottom: 20px;">
         <h2 style="font-size: 1.25rem; font-weight: 800; text-transform: uppercase;">South Central Railway Geospatial Grid</h2>
-        <p style="font-size: 0.78rem; color: var(--text-2); margin-top: 4px;">Dynamic pathing and failure mapping of active express sectors.</p>
+        <p style="font-size: 0.78rem; color: var(--text-2); margin-top: 4px;">Dynamic pathing and failure mapping of active express sectors. Search any station below to plot live track conditions anywhere in India.</p>
       </div>
-      
+
       <div class="svg-map-wrapper">
         <svg viewBox="0 0 600 500" style="width: 100%; height: auto;" id="india-svg-map">
-          <!-- Dark Tech Grid lines -->
           <defs>
             <pattern id="grid-lines" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(201,106,61,0.03)" stroke-width="1"/>
@@ -243,48 +362,39 @@
           <rect width="100%" height="100%" fill="url(#grid-lines)" />
 
           <!-- Connected Glowing railway paths -->
-          <!-- Hyderabad to Secunderabad -->
           <path d="M 120 380 Q 140 370 170 340" id="route-hyd-sec" class="glowing-route route-nominal" />
-          
-          <!-- Secunderabad to Kazipet -->
           <path d="M 170 340 Q 230 260 310 210" id="route-sec-kzp" class="glowing-route route-nominal" />
-          
-          <!-- Kazipet to Warangal -->
           <path d="M 310 210 L 370 230" id="route-kzp-wgl" class="glowing-route route-nominal" />
-          
-          <!-- Warangal to Vijayawada -->
           <path d="M 370 230 Q 450 320 490 390" id="route-wgl-vjw" class="glowing-route route-nominal" />
 
           <!-- Station Nodes -->
-          <!-- Hyderabad -->
           <g class="map-node" id="node-hyd" onclick="clickNode('Hyderabad', 'HYD-01')">
             <circle cx="120" cy="380" r="7" />
             <text x="120" y="402" class="node-label">Hyderabad (HYD)</text>
           </g>
-          
-          <!-- Secunderabad -->
+
           <g class="map-node active" id="node-sec" onclick="clickNode('Secunderabad', 'SC-07')">
             <circle cx="170" cy="340" r="7" />
             <text x="145" y="322" class="node-label">Secunderabad (SC)</text>
           </g>
 
-          <!-- Kazipet -->
           <g class="map-node" id="node-kzp" onclick="clickNode('Kazipet', 'KZP-03')">
             <circle cx="310" cy="210" r="7" />
             <text x="310" y="190" class="node-label">Kazipet (KZP)</text>
           </g>
 
-          <!-- Warangal -->
           <g class="map-node" id="node-wgl" onclick="clickNode('Warangal', 'WGL-09')">
             <circle cx="370" cy="230" r="7" />
             <text x="390" y="250" class="node-label">Warangal (WGL)</text>
           </g>
 
-          <!-- Vijayawada -->
           <g class="map-node" id="node-vjw" onclick="clickNode('Vijayawada', 'BZA-12')">
             <circle cx="490" cy="390" r="7" />
             <text x="490" y="415" class="node-label">Vijayawada (BZA)</text>
           </g>
+
+          <!-- Dynamically searched stations get appended here by stationLookup.js -->
+          <g id="dynamic-stations"></g>
         </svg>
 
         <div class="map-beacon-overlay">
@@ -296,9 +406,20 @@
       </div>
     </div>
 
-    <!-- Right sidebar: Control panel and readout -->
+    <!-- Right sidebar -->
     <div class="control-sidebar">
-      
+
+      <!-- NEW: Station lookup panel -->
+      <div class="sim-card station-lookup-panel">
+        <span class="hud-title">India-Wide Track Condition Lookup</span>
+        <form id="station-lookup-form" onsubmit="return false;">
+          <input type="text" name="station" placeholder="e.g. Vijayawada, BZA, Nagpur, Mysore..." />
+          <button type="button" data-action="check">CHECK</button>
+        </form>
+        <button type="button" data-action="clear" style="width:100%; margin-top: 4px;">♻ CLEAR SEARCHED STATIONS</button>
+        <div id="station-lookup-result" style="margin-top: 12px;"></div>
+      </div>
+
       <!-- Fault injection card -->
       <div class="sim-card">
         <span class="hud-title">COGNITIVE INTERVENTION CONSOLE</span>
@@ -344,6 +465,11 @@
     </div>
   </div>
 
+  <script type="module">
+    import { initStationLookup } from './js/stationLookup.js';
+    initStationLookup('station-lookup-form', 'station-lookup-result');
+  </script>
+
   <script>
     // Theme Switcher implementation
     const themeToggle = document.getElementById('theme-toggle');
@@ -388,7 +514,7 @@
 
       document.getElementById('readout-node').textContent = name + " Junction";
       document.getElementById('readout-id').textContent = id;
-      
+
       const isNodeFaulty = activeNodeEl && activeNodeEl.classList.contains('faulty');
       const readoutRisk = document.getElementById('readout-risk');
       const readoutStatus = document.getElementById('readout-status');
@@ -408,29 +534,27 @@
 
     function triggerMapFault(sectorKey, pathId, nodeId) {
       resetMapSimulation();
-      
+
       activeFaultRouteId = pathId;
       activeFaultNodeId = nodeId;
 
       const routeEl = document.getElementById(pathId);
       const nodeEl = document.getElementById(nodeId);
-      
+
       const btn = document.getElementById('btn-' + sectorKey);
       if (btn) btn.classList.add('active');
 
-      // Stage 1: Yellow Warning route & telemetry (immediate)
       routeEl.className = "glowing-route route-warning";
-      
+
       document.getElementById('map-beacon-status').style.background = 'var(--amber)';
       document.getElementById('map-beacon-text').textContent = 'ANOMALY ALERTED';
       document.getElementById('map-beacon-text').style.color = 'var(--amber)';
-      
+
       document.getElementById('map-directive-card').style.borderLeftColor = 'var(--amber)';
       document.getElementById('map-directive-title').textContent = 'SPEED ENVELOPE DAMPENING';
       document.getElementById('map-directive-title').style.color = 'var(--amber)';
       document.getElementById('map-directive-text').textContent = `Vibration anomalies detected on sector ${sectorKey.toUpperCase()}. Restricting corridor speed to 40 km/h. Edge nodes computing TinyML classifications.`;
 
-      // Stage 2: Red Critical / Emergency Halt override after 2 seconds
       simTimer = setTimeout(() => {
         routeEl.className = "glowing-route route-critical";
         if (nodeEl) nodeEl.classList.add('faulty');
@@ -447,7 +571,6 @@
         document.getElementById('map-directive-title').style.color = 'var(--red)';
         document.getElementById('map-directive-text').textContent = `CRITICAL: Broken rail fracture classified at sector ${sectorKey.toUpperCase()}. Interlocking overridden. Safe halt dispatch transmitted. Avoided collision.`;
 
-        // Update Readout if selected
         const currentNodeIdName = document.getElementById('readout-id').textContent;
         if (nodeId.includes(currentNodeIdName.split('-')[0].toLowerCase())) {
           document.getElementById('readout-risk').textContent = "98%";
@@ -460,7 +583,7 @@
 
     function resetMapSimulation() {
       clearTimeout(simTimer);
-      
+
       document.querySelectorAll('.glowing-route').forEach(route => {
         route.className = "glowing-route route-nominal";
       });
@@ -483,7 +606,6 @@
       document.getElementById('map-directive-title').style.color = 'var(--green)';
       document.getElementById('map-directive-text').textContent = "All routes nominal. Signal interlocks verified. Autonomy Level 5 armed on Secunderabad–Vijayawada corridor sections.";
 
-      // Reset readout values
       const currentId = document.getElementById('readout-id').textContent;
       clickNode(document.getElementById('readout-node').textContent.split(" ")[0], currentId);
     }
